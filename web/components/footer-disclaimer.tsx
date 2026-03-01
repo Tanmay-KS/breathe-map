@@ -28,7 +28,7 @@ export function FooterDisclaimer() {
               className="text-xs font-medium"
               style={{ color: '#52525b' }}
             >
-              © 2026 TBA
+              © 2026 Breathe Map
             </span>
           </div>
 
@@ -40,7 +40,7 @@ export function FooterDisclaimer() {
             Educational simulation only.
           </p>
 
-        </div>
+        </div> 
       </div>
     </footer>
   )
