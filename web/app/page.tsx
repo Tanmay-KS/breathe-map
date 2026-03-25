@@ -6,16 +6,11 @@ import { FooterDisclaimer } from '@/components/footer-disclaimer'
 import { useState, useEffect, useRef } from 'react'
 
 // ─── FONT CONFIG ────────────────────────────────────────────────────────────
-// Edit these values to change fonts across the entire page in one place.
-// FONT_IMPORT  → Google Fonts URL family string (the part after ?family=)
-// FONT_DISPLAY → font-family for headings, stats, and button labels
-// FONT_BODY    → font-family for body text, descriptions, and prose
 const FONT_IMPORT  = 'Google+Sans:wght@300;400;500;600;700'
 const FONT_DISPLAY = "'Google Sans', sans-serif"
 const FONT_BODY    = "'Google Sans', sans-serif"
 // ────────────────────────────────────────────────────────────────────────────
 
-// Animated particle canvas for hero background
 function ParticleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -49,8 +44,7 @@ function ParticleCanvas() {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       particles.forEach((p) => {
-        p.x += p.vx
-        p.y += p.vy
+        p.x += p.vx; p.y += p.vy
         if (p.x < 0) p.x = canvas.width
         if (p.x > canvas.width) p.x = 0
         if (p.y < 0) p.y = canvas.height
@@ -69,7 +63,7 @@ function ParticleCanvas() {
             ctx.beginPath()
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.strokeStyle = `rgba(134,239,172,${0.08 * (1 - dist / 120)})`
+            ctx.strokeStyle = `rgba(134,239,172,${0.07 * (1 - dist / 120)})`
             ctx.lineWidth = 0.5
             ctx.stroke()
           }
@@ -89,12 +83,11 @@ function ParticleCanvas() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ opacity: 0.6 }}
+      style={{ opacity: 0.5 }}
     />
   )
 }
 
-// Animated AQI gauge ring
 function AQIRing({ value, label, color }: { value: number; label: string; color: string }) {
   const [displayed, setDisplayed] = useState(0)
   const circumference = 2 * Math.PI * 36
@@ -104,12 +97,8 @@ function AQIRing({ value, label, color }: { value: number; label: string; color:
       let start = 0
       const step = () => {
         start += 2
-        if (start <= value) {
-          setDisplayed(start)
-          requestAnimationFrame(step)
-        } else {
-          setDisplayed(value)
-        }
+        if (start <= value) { setDisplayed(start); requestAnimationFrame(step) }
+        else setDisplayed(value)
       }
       requestAnimationFrame(step)
     }, 400)
@@ -117,31 +106,29 @@ function AQIRing({ value, label, color }: { value: number; label: string; color:
   }, [value])
 
   return (
-    <div className="flex flex-col items-center gap-2.5 group cursor-default">
+    <div className="flex flex-col items-center gap-2.5 cursor-default">
       <div className="relative w-[72px] h-[72px] sm:w-20 sm:h-20">
         <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
-          <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="6" />
+          <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
           <circle
-            cx="40" cy="40" r="36"
-            fill="none"
-            stroke={color}
-            strokeWidth="6"
-            strokeLinecap="round"
+            cx="40" cy="40" r="36" fill="none"
+            stroke={color} strokeWidth="6" strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={circumference - (displayed / 100) * circumference}
             style={{ transition: 'stroke-dashoffset 0.05s linear' }}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-base sm:text-lg font-bold text-white tabular-nums" style={{ fontFamily: FONT_DISPLAY }}>{displayed}</span>
+          <span className="text-base sm:text-lg font-bold text-white tabular-nums" style={{ fontFamily: FONT_DISPLAY }}>
+            {displayed}
+          </span>
         </div>
       </div>
-      <span className="text-[10px] sm:text-xs text-zinc-400 font-semibold tracking-widest uppercase">{label}</span>
+      <span className="text-[10px] sm:text-xs text-zinc-500 font-medium tracking-widest uppercase">{label}</span>
     </div>
   )
 }
 
-// Hover-animated capability card
 function CapabilityCard({ title, desc, index }: { title: string; desc: string; index: number }) {
   const [hovered, setHovered] = useState(false)
 
@@ -151,31 +138,23 @@ function CapabilityCard({ title, desc, index }: { title: string; desc: string; i
       onMouseLeave={() => setHovered(false)}
       style={{
         animationDelay: `${index * 80}ms`,
-        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+        transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
         transition: 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease, border-color 0.2s ease',
         boxShadow: hovered
-          ? '0 12px 40px rgba(134,239,172,0.08), 0 4px 12px rgba(0,0,0,0.3)'
-          : '0 2px 8px rgba(0,0,0,0.2)',
+          ? '0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(52,211,153,0.1)'
+          : '0 2px 8px rgba(0,0,0,0.15)',
+        borderColor: hovered ? 'rgba(52,211,153,0.15)' : 'rgba(63,63,70,0.5)',
       }}
-      className={`
-        relative rounded-2xl p-6 sm:p-7 border overflow-hidden cursor-default
-        border-zinc-800/60 bg-gradient-to-br from-zinc-900/80 to-zinc-950/90
-        ${hovered ? 'border-emerald-800/50' : ''}
-      `}
+      className="relative rounded-2xl p-6 sm:p-7 border overflow-hidden cursor-default bg-zinc-900/50"
     >
-      {/* Subtle top accent line */}
       <div
         className="absolute top-0 left-6 right-6 h-px rounded-full transition-opacity duration-300"
         style={{
-          background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.4), transparent)',
-          opacity: hovered ? 1 : 0
+          background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.3), transparent)',
+          opacity: hovered ? 1 : 0,
         }}
       />
-      <div
-        className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl transition-opacity duration-300 bg-emerald-500/10"
-        style={{ opacity: hovered ? 1 : 0 }}
-      />
-      <h3 className="font-semibold mb-2.5 text-sm tracking-wide text-zinc-100" style={{ fontFamily: FONT_DISPLAY }}>
+      <h3 className="font-semibold mb-2.5 text-sm text-zinc-100" style={{ fontFamily: FONT_DISPLAY }}>
         {title}
       </h3>
       <p className="text-zinc-500 text-[13.5px] leading-relaxed">{desc}</p>
@@ -183,35 +162,36 @@ function CapabilityCard({ title, desc, index }: { title: string; desc: string; i
   )
 }
 
-// Workflow step
-function WorkflowStep({ num, title, text, isLast, index }: { num: string; title: string; text: string; isLast?: boolean; index: number }) {
+function WorkflowStep({ num, title, text, isLast, index }: {
+  num: string; title: string; text: string; isLast?: boolean; index: number
+}) {
   const [hovered, setHovered] = useState(false)
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{ animationDelay: `${index * 100}ms` }}
-      className="flex gap-5 sm:gap-6 group cursor-default"
+      className="flex gap-5 sm:gap-6 cursor-default"
     >
       <div className="flex-shrink-0 flex flex-col items-center">
         <div
           style={{
-            transform: hovered ? 'scale(1.12)' : 'scale(1)',
+            transform: hovered ? 'scale(1.1)' : 'scale(1)',
             transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)',
             fontFamily: FONT_DISPLAY,
           }}
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-emerald-700/60 bg-emerald-950/50 flex items-center justify-center text-sm font-bold text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.15)]"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-emerald-800/50 bg-emerald-950/60 flex items-center justify-center text-sm font-bold text-emerald-400"
         >
           {num}
         </div>
         {!isLast && (
-          <div className="w-px flex-1 mt-3 bg-gradient-to-b from-emerald-900/40 to-transparent min-h-[24px]" />
+          <div className="w-px flex-1 mt-3 bg-gradient-to-b from-zinc-700/40 to-transparent min-h-[24px]" />
         )}
       </div>
       <div className={`flex-1 min-w-0 ${isLast ? 'pb-0' : 'pb-8'}`}>
         <h3
-          style={{ color: hovered ? '#6ee7b7' : '#f4f4f5', transition: 'color 0.2s ease', fontFamily: FONT_DISPLAY }}
-          className="font-semibold mb-1.5 text-[15px] tracking-wide"
+          style={{ color: hovered ? '#6ee7b7' : '#e4e4e7', transition: 'color 0.2s ease', fontFamily: FONT_DISPLAY }}
+          className="font-semibold mb-1.5 text-[15px]"
         >
           {title}
         </h3>
@@ -229,50 +209,49 @@ export default function Home() {
     <div className="min-h-screen bg-zinc-950 flex flex-col">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=${FONT_IMPORT}&display=swap');
-
-        :root {
-          --font-display: ${FONT_DISPLAY};
-          --font-body:    ${FONT_BODY};
-        }
+        :root { --font-display: ${FONT_DISPLAY}; --font-body: ${FONT_BODY}; }
 
         @keyframes heroFade {
-          from { opacity: 0; transform: translateY(22px); }
+          from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
 
         .hero-title { font-family: var(--font-display); }
         .body-font  { font-family: var(--font-body); }
 
+        /* Unified gradient text — same stops used across hero + CTA */
         .gradient-text {
-          background: linear-gradient(135deg, #86efac 0%, #34d399 40%, #6ee7b7 80%, #a7f3d0 100%);
+          background: linear-gradient(135deg, #6ee7b7 0%, #34d399 50%, #a7f3d0 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
 
+        /* Primary CTA */
         .glow-btn {
-          box-shadow: 0 0 20px rgba(52,211,153,0.25), 0 4px 12px rgba(0,0,0,0.4);
+          box-shadow: 0 0 16px rgba(52,211,153,0.2), 0 4px 12px rgba(0,0,0,0.35);
           transition: box-shadow 0.25s ease, transform 0.2s ease;
         }
         .glow-btn:hover {
-          box-shadow: 0 0 32px rgba(52,211,153,0.45), 0 8px 24px rgba(0,0,0,0.5);
+          box-shadow: 0 0 28px rgba(52,211,153,0.35), 0 8px 24px rgba(0,0,0,0.45);
           transform: translateY(-2px);
         }
+
+        /* Secondary CTA */
         .outline-btn {
-          transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+          transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
         }
         .outline-btn:hover {
-          border-color: rgba(52,211,153,0.5);
-          background-color: rgba(52,211,153,0.06);
+          border-color: rgba(52,211,153,0.35);
+          background-color: rgba(52,211,153,0.05);
           transform: translateY(-2px);
-          box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }
 
         .mesh-bg {
           background:
-            radial-gradient(ellipse 60% 50% at 20% 10%, rgba(16,100,60,0.18) 0%, transparent 70%),
-            radial-gradient(ellipse 50% 40% at 80% 80%, rgba(30,58,80,0.2) 0%, transparent 70%),
-            radial-gradient(ellipse 40% 60% at 50% 40%, rgba(15,40,30,0.15) 0%, transparent 70%),
+            radial-gradient(ellipse 60% 50% at 20% 10%, rgba(16,100,60,0.15) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 40% at 80% 80%, rgba(30,58,80,0.18) 0%, transparent 70%),
+            radial-gradient(ellipse 40% 60% at 50% 40%, rgba(15,40,30,0.12) 0%, transparent 70%),
             #09090b;
         }
 
@@ -281,10 +260,9 @@ export default function Home() {
         }
         .stat-card:hover {
           transform: translateY(-3px);
-          box-shadow: 0 8px 30px rgba(52,211,153,0.12), 0 2px 8px rgba(0,0,0,0.3);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(52,211,153,0.08);
         }
 
-        /* Ensure text is never too wide for comfortable reading */
         .prose-width { max-width: 62ch; }
       `}</style>
 
@@ -296,16 +274,21 @@ export default function Home() {
         <section className="relative mesh-bg overflow-hidden">
           <ParticleCanvas />
 
-          {/* Decorative rings */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] rounded-full border border-emerald-900/20 pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] sm:w-[1100px] sm:h-[1100px] rounded-full border border-emerald-900/10 pointer-events-none" />
+          {/* Decorative rings — softer opacity to not compete with content */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] rounded-full border border-emerald-900/15 pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] sm:w-[1100px] sm:h-[1100px] rounded-full border border-emerald-900/8 pointer-events-none" />
 
           <div className="relative w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 sm:pt-28 sm:pb-32 md:pt-36 md:pb-44 text-center">
 
-            {/* Badge */}
+            {/* Badge — uses same muted green as nav city chip for coherence */}
             <div
-              style={{ animation: mounted ? 'heroFade 0.6s ease 0.1s both' : 'none' }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-800/50 bg-emerald-950/60 text-emerald-400 text-[10px] sm:text-xs font-semibold tracking-widest uppercase mb-7 sm:mb-8 backdrop-blur-sm"
+              style={{ animation: mounted ? 'heroFade 0.6s ease 0.1s both' : 'none', 
+              borderColor: 'rgba(52,211,153,0.18)',
+              backgroundColor: 'rgba(52,211,153,0.06)',
+              color: '#6ee7b7',
+
+              }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[10px] sm:text-xs font-semibold tracking-widest uppercase mb-7 sm:mb-8 backdrop-blur-sm"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Educational Simulation Platform
@@ -330,39 +313,45 @@ export default function Home() {
               factor correlation analysis, and intervention simulation — built for learning and exploration.
             </p>
 
-            {/* CTA Buttons */}
+            {/* CTAs */}
             <div
               style={{ animation: mounted ? 'heroFade 0.7s ease 0.5s both' : 'none' }}
               className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-16 sm:mb-20"
             >
               <Link
                 href="/dashboard"
-                className="glow-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 w-full sm:w-auto sm:min-w-[190px] bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm sm:text-[15px] tracking-wide hero-title"
+                className="glow-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 w-full sm:w-auto sm:min-w-[190px] bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+                </svg>
                 Open Dashboard
               </Link>
               <Link
                 href="/zones"
-                className="outline-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 w-full sm:w-auto sm:min-w-[190px] border border-zinc-700 text-zinc-200 font-semibold rounded-xl text-sm sm:text-[15px] tracking-wide hero-title"
+                className="outline-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 w-full sm:w-auto sm:min-w-[190px] border border-zinc-700/80 text-zinc-300 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
                 Explore Zones
               </Link>
             </div>
 
-            {/* AQI Gauges */}
+            {/* AQI Gauges strip */}
             <div
-              style={{ animation: mounted ? 'heroFade 0.7s ease 0.65s both' : 'none' }}
-              className="inline-flex flex-wrap justify-center gap-6 sm:gap-10 bg-white/[0.04] border border-white/[0.07] rounded-2xl px-6 sm:px-10 py-5 sm:py-6 backdrop-blur-sm"
+              style={{ animation: mounted ? 'heroFade 0.7s ease 0.65s both' : 'none', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+              className="inline-flex flex-wrap justify-center gap-6 sm:gap-10 rounded-2xl px-6 sm:px-10 py-5 sm:py-6 backdrop-blur-sm"
             >
               <AQIRing value={42} label="Zone A" color="#34d399" />
               <AQIRing value={78} label="Zone B" color="#fbbf24" />
               <AQIRing value={61} label="Zone C" color="#60a5fa" />
               <AQIRing value={93} label="Zone D" color="#f87171" />
-              <div className="hidden sm:flex flex-col justify-center items-start gap-1 pl-4 sm:pl-6 border-l border-white/10">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">Simulated</span>
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">AQI Values</span>
+              <div className="hidden sm:flex flex-col justify-center items-start gap-1 pl-4 sm:pl-6 border-l border-white/[0.07]">
+                <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-medium">Simulated</span>
+                <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-medium">AQI Values</span>
               </div>
             </div>
           </div>
@@ -371,7 +360,10 @@ export default function Home() {
         {/* ── CAPABILITIES ── */}
         <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 md:py-32">
           <div className="text-center mb-12 sm:mb-14">
-            <p className="text-emerald-500 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase mb-2.5">What&apos;s Inside</p>
+            {/* Eyebrow — muted green, not full #34d399 saturation */}
+            <p className="text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase mb-2.5" style={{ color: '#6ee7b7' }}>
+              What&apos;s Inside
+            </p>
             <h2 className="hero-title text-3xl sm:text-4xl md:text-[2.75rem] text-zinc-100 tracking-tight">
               Core Capabilities
             </h2>
@@ -379,30 +371,12 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              {
-                title: "Zone Configuration",
-                desc: "Define monitoring areas using land-use, traffic density, population, and road network parameters."
-              },
-              {
-                title: "Deterministic AQI",
-                desc: "Transparent, formula-based AQI calculation with visible contribution of each input factor."
-              },
-              {
-                title: "Correlation & Clustering",
-                desc: "Identify relationships between variables and group zones by air quality behaviour."
-              },
-              {
-                title: "Intervention Simulation",
-                desc: "Test hypothetical changes — reduced traffic, increased greenery, altered road patterns — and observe estimated outcomes."
-              },
-              {
-                title: "Calculation Transparency",
-                desc: "Every AQI value is traceable to its exact contributing weights and input values."
-              },
-              {
-                title: "Exploratory Scope",
-                desc: "Uses modeled data to provide exploratory insights and scenario-based air-quality estimates.",
-              }
+              { title: "Zone Configuration", desc: "Define monitoring areas using land-use, traffic density, population, and road network parameters." },
+              { title: "Deterministic AQI",  desc: "Transparent, formula-based AQI calculation with visible contribution of each input factor." },
+              { title: "Correlation & Clustering", desc: "Identify relationships between variables and group zones by air quality behaviour." },
+              { title: "Intervention Simulation", desc: "Test hypothetical changes — reduced traffic, increased greenery, altered road patterns — and observe estimated outcomes." },
+              { title: "Calculation Transparency", desc: "Every AQI value is traceable to its exact contributing weights and input values." },
+              { title: "Exploratory Scope", desc: "Uses modeled data to provide exploratory insights and scenario-based air-quality estimates." },
             ].map((item, i) => (
               <CapabilityCard key={i} index={i} title={item.title} desc={item.desc} />
             ))}
@@ -410,20 +384,20 @@ export default function Home() {
         </section>
 
         {/* ── STATS STRIP ── */}
-        <section className="border-y border-zinc-800/60 bg-zinc-900/30">
+        <section className="border-y border-zinc-800/50 bg-zinc-900/20">
           <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
               {[
                 { value: '6', unit: '+', label: 'Input Parameters' },
-                { value: '4', unit: '', label: 'Workflow Stages' },
+                { value: '4', unit: '',  label: 'Workflow Stages'  },
                 { value: '100', unit: '%', label: 'Transparent Calc' },
-                { value: '0', unit: '', label: 'Real-World Data' },
+                { value: '0', unit: '',  label: 'Real-World Data'  },
               ].map((s, i) => (
-                <div key={i} className="stat-card text-center py-5 sm:py-6 px-3 sm:px-4 rounded-xl border border-zinc-800/50 bg-zinc-900/50 cursor-default">
+                <div key={i} className="stat-card text-center py-5 sm:py-6 px-3 sm:px-4 rounded-xl border border-zinc-800/40 bg-zinc-900/40 cursor-default">
                   <div className="hero-title text-3xl sm:text-4xl md:text-5xl text-emerald-400 mb-1.5 sm:mb-2">
-                    {s.value}<span className="text-xl sm:text-2xl text-emerald-600">{s.unit}</span>
+                    {s.value}<span className="text-xl sm:text-2xl text-emerald-700">{s.unit}</span>
                   </div>
-                  <div className="text-[10px] sm:text-xs text-zinc-500 font-medium tracking-widest uppercase">{s.label}</div>
+                  <div className="text-[10px] sm:text-xs text-zinc-600 font-medium tracking-widest uppercase">{s.label}</div>
                 </div>
               ))}
             </div>
@@ -433,10 +407,10 @@ export default function Home() {
         {/* ── WORKFLOW ── */}
         <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 md:py-32">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
-
-            {/* Sticky sidebar */}
             <div className="lg:sticky lg:top-24 lg:w-64 xl:w-72 flex-shrink-0">
-              <p className="text-emerald-500 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase mb-2.5">How It Works</p>
+              <p className="text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase mb-2.5" style={{ color: '#6ee7b7' }}>
+                How It Works
+              </p>
               <h2 className="hero-title text-3xl sm:text-[2rem] text-zinc-100 tracking-tight mb-3">
                 Simple, Transparent Workflow
               </h2>
@@ -445,13 +419,12 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Steps */}
             <div className="flex-1 min-w-0">
               {[
-                { num: "1", title: "Configure zones", text: "Specify land use, traffic intensity, population density and street layout." },
-                { num: "2", title: "Calculate AQI", text: "Review the step-by-step contribution of each parameter to the final index." },
+                { num: "1", title: "Configure zones",  text: "Specify land use, traffic intensity, population density and street layout." },
+                { num: "2", title: "Calculate AQI",    text: "Review the step-by-step contribution of each parameter to the final index." },
                 { num: "3", title: "Analyze patterns", text: "Examine correlations and observe how zones naturally group." },
-                { num: "4", title: "Simulate change", text: "Modify input variables and compare before/after estimates." }
+                { num: "4", title: "Simulate change",  text: "Modify input variables and compare before/after estimates." },
               ].map((step, i, arr) => (
                 <WorkflowStep key={i} index={i} num={step.num} title={step.title} text={step.text} isLast={i === arr.length - 1} />
               ))}
@@ -460,13 +433,15 @@ export default function Home() {
         </section>
 
         {/* ── FINAL CTA ── */}
-        <section className="relative overflow-hidden border-t border-zinc-800/60">
+        <section className="relative overflow-hidden border-t border-zinc-800/50">
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] sm:w-[700px] h-[280px] bg-emerald-900/20 blur-[80px] rounded-full" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] sm:w-[700px] h-[260px] bg-emerald-900/15 blur-[80px] rounded-full" />
           </div>
 
           <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 md:py-32 text-center">
-            <p className="text-emerald-500 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase mb-3">Get Started</p>
+            <p className="text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase mb-3" style={{ color: '#6ee7b7' }}>
+              Get Started
+            </p>
             <h2 className="hero-title text-3xl sm:text-4xl md:text-5xl text-zinc-100 tracking-tight mb-4 sm:mb-5">
               Start Modelling
             </h2>
@@ -477,21 +452,26 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-10 sm:mb-12">
               <Link
                 href="/dashboard"
-                className="glow-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-9 py-3.5 sm:py-4 w-full sm:w-auto bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm sm:text-[15px] tracking-wide hero-title"
+                className="glow-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-9 py-3.5 sm:py-4 w-full sm:w-auto bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+                </svg>
                 View Dashboard
               </Link>
               <Link
                 href="/zones"
-                className="outline-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-9 py-3.5 sm:py-4 w-full sm:w-auto border border-zinc-700 text-zinc-200 font-semibold rounded-xl text-sm sm:text-[15px] tracking-wide hero-title"
+                className="outline-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-9 py-3.5 sm:py-4 w-full sm:w-auto border border-zinc-700/80 text-zinc-300 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" strokeLinecap="round"/></svg>
+                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path d="M12 5v14M5 12h14" strokeLinecap="round"/>
+                </svg>
                 Create Zone
               </Link>
             </div>
 
-            <p className="text-xs text-zinc-600 max-w-sm mx-auto leading-relaxed">
+            <p className="text-xs text-zinc-700 max-w-sm mx-auto leading-relaxed">
               Educational simulation tool using synthetic data and simplified relationships.
             </p>
           </div>
