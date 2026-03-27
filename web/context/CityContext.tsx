@@ -8,6 +8,7 @@ interface CityContextType {
   currentCity: City
   cities: City[]
   setCurrentCity: (id: string) => void
+  refreshCities: () => Promise<void>
 }
 
 const FALLBACK_CITY: City = {
@@ -24,25 +25,37 @@ export function CityProvider({ children }: { children: React.ReactNode }) {
   const [cities, setCities] = useState<City[]>([FALLBACK_CITY])
   const [currentCityId, setCurrentCityIdState] = useState<string>(FALLBACK_CITY.id)
 
-  useEffect(() => {
-    const loadCities = async () => {
-      try {
-        const res = await fetch('/api/cities', { cache: 'no-store' })
-        const data = await res.json()
-        const loadedCities = (data.cities as City[] | undefined)?.length ? (data.cities as City[]) : [FALLBACK_CITY]
-        setCities(loadedCities)
+  const loadCities = async () => {
+    try {
+      const res = await fetch('/api/cities', { cache: 'no-store' })
+      const data = await res.json()
+      const loadedCities = (data.cities as City[] | undefined)?.length ? (data.cities as City[]) : [FALLBACK_CITY]
+      setCities(loadedCities)
 
-        const stored = localStorage.getItem('breathe_map_city_id')
-        const initialId =
-          stored && loadedCities.some((city) => city.id === stored) ? stored : loadedCities[0].id
-        setCurrentCityIdState(initialId)
-      } catch {
-        setCities([FALLBACK_CITY])
-        setCurrentCityIdState(FALLBACK_CITY.id)
-      }
+      const stored = localStorage.getItem('breathe_map_city_id')
+      const initialId =
+        stored && loadedCities.some((city) => city.id === stored) ? stored : loadedCities[0].id
+      setCurrentCityIdState(initialId)
+    } catch {
+      setCities([FALLBACK_CITY])
+      setCurrentCityIdState(FALLBACK_CITY.id)
     }
+  }
 
+  const refreshCities = async () => {
+    try {
+      const res = await fetch('/api/cities', { cache: 'no-store' })
+      const data = await res.json()
+      const loadedCities = (data.cities as City[] | undefined)?.length ? (data.cities as City[]) : [FALLBACK_CITY]
+      setCities(loadedCities)
+    } catch {
+      // silently fail — existing cities remain
+    }
+  }
+
+  useEffect(() => {
     void loadCities()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const setCurrentCity = (id: string) => {
@@ -56,7 +69,7 @@ export function CityProvider({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <CityContext.Provider value={{ currentCityId, currentCity, cities, setCurrentCity }}>
+    <CityContext.Provider value={{ currentCityId, currentCity, cities, setCurrentCity, refreshCities }}>
       {children}
     </CityContext.Provider>
   )
