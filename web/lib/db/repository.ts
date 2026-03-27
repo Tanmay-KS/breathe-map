@@ -1,5 +1,6 @@
 import { AQIEstimate, AQICorrelation, Zone, ZoneCluster } from '@/lib/types'
 import { db } from './adapter'
+import { getFallbackAQIPrediction } from '@/lib/ml/fallback'
 
 export async function listZones(): Promise<Zone[]> {
   return db.zones.getAll()
@@ -22,7 +23,29 @@ export async function storeAQIEstimate(zone: Zone): Promise<AQIEstimate> {
 }
 
 export async function getLatestAQIForZone(zone: Zone): Promise<AQIEstimate> {
-  return db.aqi.estimate(zone)
+  try {
+    return await db.aqi.estimate(zone)
+  } catch (error) {
+    console.error(`AQI estimation failed for zone ${zone.id}:`, error)
+    try {
+      const historical = await db.aqi.getHistorical(zone.id)
+      if (historical.length > 0) {
+        return historical[0]
+      }
+    } catch (historyError) {
+      console.error(`AQI history fallback failed for zone ${zone.id}:`, historyError)
+    }
+
+    const fallback = getFallbackAQIPrediction(zone)
+    return {
+      zone_id: zone.id,
+      estimated_aqi: fallback.estimated_aqi,
+      category: fallback.category,
+      feature_contributions: fallback.feature_contributions,
+      assumptions: 'Fallback estimate due to inference error for this zone (formula-based).',
+      timestamp: new Date().toISOString(),
+    }
+  }
 }
 
 export async function getLatestAQIForZones(zones: Zone[]): Promise<Map<string, AQIEstimate>> {

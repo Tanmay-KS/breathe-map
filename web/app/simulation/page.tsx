@@ -247,7 +247,26 @@ function StepBadge({ n, label }: { n: number; label: string }) {
 const aqiColor = (v: number) =>
   v <= 50 ? '#34d399' : v <= 100 ? '#fbbf24' : v <= 150 ? '#f97316' : '#f87171'
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+const safeNum = (value: unknown, fallback = 0) => {
+  const n = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+function isSimulationResultPayload(value: unknown): value is SimulationResult {
+  if (!value || typeof value !== 'object') return false
+  const v = value as Record<string, unknown>
+  return (
+    typeof v.scenario_id === 'string' &&
+    typeof v.zone_id === 'string' &&
+    typeof v.before_aqi === 'number' &&
+    typeof v.after_aqi === 'number' &&
+    typeof v.delta === 'number' &&
+    typeof v.delta_percentage === 'number' &&
+    typeof v.explanation === 'string' &&
+    typeof v.recommendation === 'string' &&
+    typeof v.timestamp === 'string'
+  )
+}
 export default function SimulationPage() {
   const { currentCityId } = useCity()
   const [zones, setZones]               = useState<Zone[]>([])
@@ -264,6 +283,9 @@ export default function SimulationPage() {
     const loadZones = async () => {
       try {
         const response = await fetch(`/api/zones?cityId=${currentCityId}`, { cache: 'no-store' })
+        if (!response.ok) {
+          throw new Error(`Failed to load zones (${response.status})`)
+        }
         const data = await response.json()
         const loadedZones = (data.zones ?? []) as Zone[]
         setZones(loadedZones)
@@ -295,10 +317,26 @@ export default function SimulationPage() {
         }),
       })
       const data = await response.json()
+      if (!response.ok) {
+        const message =
+          (data && typeof data.error === 'string' && data.error) ||
+          (data && typeof data.details === 'string' && data.details) ||
+          `Simulation failed (${response.status})`
+        throw new Error(message)
+      }
+
+      if (!isSimulationResultPayload(data)) {
+        throw new Error('Invalid simulation response payload')
+      }
+
       setResult(data)
     } catch (error) {
       console.error('Simulation error:', error)
-      toastError(ErrorCodes.SIMULATION_RUN_FAILED.message, ErrorCodes.SIMULATION_RUN_FAILED.code)
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : ErrorCodes.SIMULATION_RUN_FAILED.message
+      toastError(message, ErrorCodes.SIMULATION_RUN_FAILED.code)
     } finally {
       setIsLoading(false)
     }
@@ -537,13 +575,21 @@ export default function SimulationPage() {
           {/* ── RESULTS PANEL ── */}
           <div>
             {result ? (
-              <div style={{ animation: 'fadeSlideUp 0.45s ease both' }} className="space-y-4">
-
+              <div
+                style={{ animation: 'fadeSlideUp 0.45s ease both' }}
+                className="space-y-4"
+              >
+                {(() => {
+                  const beforeAqi = safeNum(result.before_aqi, 0)
+                  const afterAqi = safeNum(result.after_aqi, 0)
+                  const delta = safeNum(result.delta, 0)
+                  const deltaPct = safeNum(result.delta_percentage, 0)
+                  return (
+                    <>
                 <StepBadge n={2} label="Review Results" />
 
                 {/* Before / Delta / After — responsive grid */}
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
-                  {/* Before */}
                   <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/60 p-3 sm:p-5 flex flex-col items-center gap-2 sm:gap-3">
                     <span
                       className="text-[10px] sm:text-[11px] font-bold text-zinc-500 uppercase tracking-[0.12em]"
@@ -551,24 +597,18 @@ export default function SimulationPage() {
                     >
                       Current
                     </span>
-                    <AQIMeter
-                      value={result.before_aqi}
-                      label="Before"
-                      color={aqiColor(result.before_aqi)}
-                      delay={0}
-                    />
-                    <AQIBadge aqi={result.before_aqi} />
+                    <AQIMeter value={beforeAqi} label="Before" color={aqiColor(beforeAqi)} delay={0} />
+                    <AQIBadge aqi={beforeAqi} />
                   </div>
 
-                  {/* Delta */}
-                  <DeltaPill delta={result.delta} pct={result.delta_percentage} />
+                  <DeltaPill delta={delta} pct={deltaPct} />
 
                   {/* After */}
                   <div
                     className="rounded-2xl border bg-zinc-900/60 p-3 sm:p-5 flex flex-col items-center gap-2 sm:gap-3"
                     style={{
-                      borderColor: `${aqiColor(result.after_aqi)}30`,
-                      boxShadow: `0 0 24px ${aqiColor(result.after_aqi)}10`,
+                      borderColor: `${aqiColor(afterAqi)}30`,
+                      boxShadow: `0 0 24px ${aqiColor(afterAqi)}10`,
                     }}
                   >
                     <span
@@ -577,13 +617,8 @@ export default function SimulationPage() {
                     >
                       Projected
                     </span>
-                    <AQIMeter
-                      value={result.after_aqi}
-                      label="After"
-                      color={aqiColor(result.after_aqi)}
-                      delay={200}
-                    />
-                    <AQIBadge aqi={result.after_aqi} />
+                    <AQIMeter value={afterAqi} label="After" color={aqiColor(afterAqi)} delay={200} />
+                    <AQIBadge aqi={afterAqi} />
                   </div>
                 </div>
 
@@ -601,7 +636,7 @@ export default function SimulationPage() {
                   <div className="h-2 rounded-full bg-zinc-800/60 overflow-hidden mb-4">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-1000 ease-out"
-                      style={{ width: `${Math.min(result.delta_percentage, 100)}%` }}
+                      style={{ width: `${Math.min(deltaPct, 100)}%` }}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -611,7 +646,7 @@ export default function SimulationPage() {
                         className="text-xl sm:text-2xl font-bold text-emerald-400 tabular-nums"
                         style={{ fontFamily: FONT_DISPLAY }}
                       >
-                        −{result.delta.toFixed(2)} pts
+                        −{delta.toFixed(2)} pts
                       </p>
                     </div>
                     <div>
@@ -620,7 +655,7 @@ export default function SimulationPage() {
                         className="text-xl sm:text-2xl font-bold text-emerald-400"
                         style={{ fontFamily: FONT_DISPLAY }}
                       >
-                        {formatPercentChange(-result.delta_percentage)}
+                        {formatPercentChange(-deltaPct)}
                       </p>
                     </div>
                   </div>
@@ -684,7 +719,9 @@ export default function SimulationPage() {
                     ))}
                   </ul>
                 </div>
-
+                    </>
+                  )
+                })()}
               </div>
             ) : (
               /* Empty / idle state */

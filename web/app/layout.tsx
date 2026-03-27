@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import '../styles/globals.css'
 import { CityProvider } from '@/context/CityContext'
 import { ToasterProvider } from '@/components/toaster-provider'
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
   title: 'Breathe Map',
@@ -28,7 +30,11 @@ export default function RootLayout({
         <CityProvider>
           <div className="flex-1">{children}</div>
           <ToasterProvider />
-          {/* Footer will be added dynamically by pages or as a wrapper */}
+
+          {/* ✅ Add here */}
+          <Analytics />
+          <SpeedInsights />
+
         </CityProvider>
       </body>
     </html>

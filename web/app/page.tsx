@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { NavBar } from '@/components/nav-bar'
 import { FooterDisclaimer } from '@/components/footer-disclaimer'
 import { useState, useEffect, useRef } from 'react'
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 // ─── FONT CONFIG ────────────────────────────────────────────────────────────
 const FONT_IMPORT  = 'Google+Sans:wght@300;400;500;600;700'
@@ -481,5 +483,6 @@ export default function Home() {
 
       <FooterDisclaimer />
     </div>
+          
   )
 }
