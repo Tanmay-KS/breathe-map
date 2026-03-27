@@ -8,9 +8,9 @@ import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 // ─── FONT CONFIG ────────────────────────────────────────────────────────────
-const FONT_IMPORT  = 'Google+Sans:wght@300;400;500;600;700'
+const FONT_IMPORT = 'Google+Sans:wght@300;400;500;600;700'
 const FONT_DISPLAY = "'Google Sans', sans-serif"
-const FONT_BODY    = "'Google Sans', sans-serif"
+const FONT_BODY = "'Google Sans', sans-serif"
 // ────────────────────────────────────────────────────────────────────────────
 
 function ParticleCanvas() {
@@ -283,7 +283,7 @@ export default function Home() {
           <div className="relative w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 sm:pt-28 sm:pb-32 md:pt-36 md:pb-44 text-center">
 
             {/* Badge — uses same muted green as nav city chip for coherence */}
-           
+
 
             {/* Title */}
             <h1
@@ -311,22 +311,14 @@ export default function Home() {
             >
               <Link
                 href="/dashboard"
-                className="glow-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 w-full sm:w-auto sm:min-w-[190px] bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
+                className="glow-btn inline-flex items-center justify-center px-7 sm:px-8 py-3.5 sm:py-4 w-full sm:w-auto sm:min-w-[190px] bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-                  <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
-                </svg>
                 Open Dashboard
               </Link>
               <Link
                 href="/zones"
-                className="outline-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 w-full sm:w-auto sm:min-w-[190px] border border-zinc-700/80 text-zinc-300 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
+                className="outline-btn inline-flex items-center justify-center px-7 sm:px-8 py-3.5 sm:py-4 w-full sm:w-auto sm:min-w-[190px] border border-zinc-700/80 text-zinc-300 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                </svg>
                 Explore Zones
               </Link>
             </div>
@@ -363,7 +355,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { title: "Zone Configuration", desc: "Define monitoring areas using land-use, traffic density, population, and road network parameters." },
-              { title: "Deterministic AQI",  desc: "Transparent, formula-based AQI calculation with visible contribution of each input factor." },
+              { title: "Deterministic AQI", desc: "Transparent, formula-based AQI calculation with visible contribution of each input factor." },
               { title: "Correlation & Clustering", desc: "Identify relationships between variables and group zones by air quality behaviour." },
               { title: "Intervention Simulation", desc: "Test hypothetical changes — reduced traffic, increased greenery, altered road patterns — and observe estimated outcomes." },
               { title: "Calculation Transparency", desc: "Every AQI value is traceable to its exact contributing weights and input values." },
@@ -380,9 +372,9 @@ export default function Home() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
               {[
                 { value: '6', unit: '+', label: 'Input Parameters' },
-                { value: '4', unit: '',  label: 'Workflow Stages'  },
+                { value: '4', unit: '', label: 'Workflow Stages' },
                 { value: '100', unit: '%', label: 'Transparent Calc' },
-                { value: '0', unit: '',  label: 'Real-World Data'  },
+                { value: '0', unit: '', label: 'Real-World Data' },
               ].map((s, i) => (
                 <div key={i} className="stat-card text-center py-5 sm:py-6 px-3 sm:px-4 rounded-xl border border-zinc-800/40 bg-zinc-900/40 cursor-default">
                   <div className="hero-title text-3xl sm:text-4xl md:text-5xl text-emerald-400 mb-1.5 sm:mb-2">
@@ -412,10 +404,10 @@ export default function Home() {
 
             <div className="flex-1 min-w-0">
               {[
-                { num: "1", title: "Configure zones",  text: "Specify land use, traffic intensity, population density and street layout." },
-                { num: "2", title: "Calculate AQI",    text: "Review the step-by-step contribution of each parameter to the final index." },
+                { num: "1", title: "Configure zones", text: "Specify land use, traffic intensity, population density and street layout." },
+                { num: "2", title: "Calculate AQI", text: "Review the step-by-step contribution of each parameter to the final index." },
                 { num: "3", title: "Analyze patterns", text: "Examine correlations and observe how zones naturally group." },
-                { num: "4", title: "Simulate change",  text: "Modify input variables and compare before/after estimates." },
+                { num: "4", title: "Simulate change", text: "Modify input variables and compare before/after estimates." },
               ].map((step, i, arr) => (
                 <WorkflowStep key={i} index={i} num={step.num} title={step.title} text={step.text} isLast={i === arr.length - 1} />
               ))}
@@ -443,21 +435,14 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-10 sm:mb-12">
               <Link
                 href="/dashboard"
-                className="glow-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-9 py-3.5 sm:py-4 w-full sm:w-auto bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
+                className="glow-btn inline-flex items-center justify-center px-7 sm:px-9 py-3.5 sm:py-4 w-full sm:w-auto bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-                  <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
-                </svg>
                 View Dashboard
               </Link>
               <Link
                 href="/zones"
-                className="outline-btn inline-flex items-center justify-center gap-2.5 px-7 sm:px-9 py-3.5 sm:py-4 w-full sm:w-auto border border-zinc-700/80 text-zinc-300 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
+                className="outline-btn inline-flex items-center justify-center px-7 sm:px-9 py-3.5 sm:py-4 w-full sm:w-auto border border-zinc-700/80 text-zinc-300 font-semibold rounded-xl text-sm sm:text-[15px] hero-title"
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                  <path d="M12 5v14M5 12h14" strokeLinecap="round"/>
-                </svg>
                 Create Zone
               </Link>
             </div>
@@ -472,6 +457,6 @@ export default function Home() {
 
       <FooterDisclaimer />
     </div>
-          
+
   )
 }

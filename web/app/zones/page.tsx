@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { NavBar } from '@/components/nav-bar'
 import { FooterDisclaimer } from '@/components/footer-disclaimer'
 import { AQIBadge } from '@/components/aqi-badge'
+import { Loader } from '@/components/loader'
 import { Zone, AQIEstimate } from '@/lib/types'
 import { useCity } from '@/context/CityContext'
 import { Home, Building2, Factory, Trees, Layers, MapPin } from 'lucide-react'
@@ -14,21 +15,21 @@ import { Home, Building2, Factory, Trees, Layers, MapPin } from 'lucide-react'
 // FONT_IMPORT  → Google Fonts URL family string (the part after ?family=)
 // FONT_DISPLAY → font-family for headings, labels, and button text
 // FONT_BODY    → font-family for body text, descriptions, and data values
-const FONT_IMPORT  = 'Google+Sans:wght@300;400;500;600;700'
+const FONT_IMPORT = 'Google+Sans:wght@300;400;500;600;700'
 const FONT_DISPLAY = "'Google Sans', sans-serif"
-const FONT_BODY    = "'Google Sans', sans-serif"
+const FONT_BODY = "'Google Sans', sans-serif"
 // ────────────────────────────────────────────────────────────────────────────
 
 const LAND_USE_ICONS: Record<string, React.ReactNode> = {
   residential: <Home size={13} className="text-zinc-500" />,
-  commercial:  <Building2 size={13} className="text-zinc-500" />,
-  industrial:  <Factory size={13} className="text-zinc-500" />,
+  commercial: <Building2 size={13} className="text-zinc-500" />,
+  industrial: <Factory size={13} className="text-zinc-500" />,
   green_space: <Trees size={13} className="text-zinc-500" />,
-  mixed:       <Layers size={13} className="text-zinc-500" />,
+  mixed: <Layers size={13} className="text-zinc-500" />,
 }
 
 function aqiBarColor(aqi: number) {
-  if (aqi <= 50)  return '#34d399'
+  if (aqi <= 50) return '#34d399'
   if (aqi <= 100) return '#fbbf24'
   if (aqi <= 150) return '#f97316'
   return '#f87171'
@@ -228,25 +229,16 @@ export default function ZonesPage() {
   }, [currentCityId])
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
-          <p className="text-zinc-500 text-sm tracking-wide" style={{ fontFamily: FONT_BODY }}>
-            Loading zones…
-          </p>
-        </div>
-      </div>
-    )
+    return <Loader variant="page" label="Loading zones…" />
   }
 
   const FILTERS = ['all', 'residential', 'commercial', 'industrial', 'green_space', 'mixed']
   const filteredZones = filter === 'all' ? zones : zones.filter((z) => z.land_use_type === filter)
 
-  const goodCount     = Array.from(estimates.values()).filter((e) => e.category === 'good').length
+  const goodCount = Array.from(estimates.values()).filter((e) => e.category === 'good').length
   const moderateCount = Array.from(estimates.values()).filter((e) => e.category === 'moderate').length
-  const poorCount     = Array.from(estimates.values()).filter((e) => e.category === 'poor').length
-  const severeCount   = Array.from(estimates.values()).filter((e) => e.category === 'severe').length
+  const poorCount = Array.from(estimates.values()).filter((e) => e.category === 'poor').length
+  const severeCount = Array.from(estimates.values()).filter((e) => e.category === 'severe').length
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
@@ -313,12 +305,9 @@ export default function ZonesPage() {
           </div>
           <Link
             href="/zones/new"
-            className="glow-btn inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm flex-shrink-0 w-full sm:w-auto"
+            className="glow-btn inline-flex items-center justify-center px-5 py-3 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm flex-shrink-0 w-full sm:w-auto"
             style={{ fontFamily: FONT_DISPLAY }}
           >
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-            </svg>
             New Zone
           </Link>
         </div>
@@ -329,10 +318,10 @@ export default function ZonesPage() {
           className="flex flex-wrap gap-2 mb-5 sm:mb-6"
         >
           {[
-            { label: 'Good',     count: goodCount,     color: '#34d399' },
+            { label: 'Good', count: goodCount, color: '#34d399' },
             { label: 'Moderate', count: moderateCount, color: '#fbbf24' },
-            { label: 'Poor',     count: poorCount,     color: '#f97316' },
-            { label: 'Severe',   count: severeCount,   color: '#f87171' },
+            { label: 'Poor', count: poorCount, color: '#f97316' },
+            { label: 'Severe', count: severeCount, color: '#f87171' },
           ].map((s) => (
             <div
               key={s.label}
@@ -358,7 +347,7 @@ export default function ZonesPage() {
           >
             {FILTERS.map((f) => {
               const active = filter === f
-              const count  = zones.filter((z) => z.land_use_type === f).length
+              const count = zones.filter((z) => z.land_use_type === f).length
               return (
                 <button
                   key={f}
@@ -406,12 +395,9 @@ export default function ZonesPage() {
             </p>
             <Link
               href="/zones/new"
-              className="glow-btn inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm"
+              className="glow-btn inline-flex items-center justify-center px-6 py-3 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm"
               style={{ fontFamily: FONT_DISPLAY }}
             >
-              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-              </svg>
               Create First Zone
             </Link>
           </div>
@@ -448,12 +434,12 @@ export default function ZonesPage() {
               {/* Table header */}
               <div className="grid grid-cols-12 gap-3 px-5 py-3 border-b border-zinc-800/60 bg-zinc-900/70">
                 {[
-                  { label: 'Zone Name',  span: 4 },
-                  { label: 'Type',       span: 2 },
-                  { label: 'Traffic',    span: 2 },
+                  { label: 'Zone Name', span: 4 },
+                  { label: 'Type', span: 2 },
+                  { label: 'Traffic', span: 2 },
                   { label: 'Population', span: 2 },
-                  { label: 'AQI',        span: 1 },
-                  { label: '',           span: 1 },
+                  { label: 'AQI', span: 1 },
+                  { label: '', span: 1 },
                 ].map((col, i) => (
                   <div
                     key={i}

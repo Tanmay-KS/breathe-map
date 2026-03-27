@@ -10,22 +10,23 @@ import { formatPercentChange } from '@/lib/utils'
 import { useCity } from '@/context/CityContext'
 import { toastError } from '@/lib/toast'
 import { ErrorCodes } from '@/lib/errorCodes'
+import { Loader } from '@/components/loader'
 
 // ─── FONT CONFIG ────────────────────────────────────────────────────────────
 // Edit these values to change fonts across the entire page in one place.
 // FONT_IMPORT  → Google Fonts URL family string (the part after ?family=)
 // FONT_DISPLAY → font-family for headings, labels, and button text
 // FONT_BODY    → font-family for body text, descriptions, and data values
-const FONT_IMPORT  = 'Google+Sans:wght@300;400;500;600;700'
+const FONT_IMPORT = 'Google+Sans:wght@300;400;500;600;700'
 const FONT_DISPLAY = "'Google Sans', sans-serif"
-const FONT_BODY    = "'Google Sans', sans-serif"
+const FONT_BODY = "'Google Sans', sans-serif"
 // ────────────────────────────────────────────────────────────────────────────
 
 // ── Slider control ───────────────────────────────────────────────────────────
 function SliderControl({
   label, icon, value, min, max, step, unit, onChange, description, color,
 }: {
-  label: string; icon: string; value: number; min: number; max: number;
+  label: string; icon: React.ReactNode; value: number; min: number; max: number;
   step: number; unit: string; onChange: (v: number) => void;
   description: string; color: string;
 }) {
@@ -36,7 +37,7 @@ function SliderControl({
     <div className="group">
       <div className="flex justify-between items-center mb-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-base leading-none">{icon}</span>
+          <span className="flex-shrink-0 opacity-70">{icon}</span>
           <label
             className="text-sm font-semibold text-zinc-200"
             style={{ fontFamily: FONT_DISPLAY }}
@@ -81,7 +82,7 @@ function AQIMeter({ value, label, color, delay = 0 }: {
   value: number; label: string; color: string; delay?: number
 }) {
   const [displayed, setDisplayed] = useState(0)
-  const max   = 200
+  const max = 200
   const clamp = Math.min(value, max)
 
   useEffect(() => {
@@ -98,9 +99,9 @@ function AQIMeter({ value, label, color, delay = 0 }: {
     return () => clearTimeout(t)
   }, [clamp, delay])
 
-  const r            = 48
+  const r = 48
   const circumference = Math.PI * r
-  const dash          = (displayed / max) * circumference
+  const dash = (displayed / max) * circumference
 
   return (
     <div className="flex flex-col items-center">
@@ -153,11 +154,10 @@ function DeltaPill({ delta, pct }: { delta: number; pct: number }) {
         transform: visible ? 'scale(1)' : 'scale(0.85)',
         transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.34,1.56,0.64,1)',
       }}
-      className={`flex flex-col items-center justify-center rounded-2xl border p-4 sm:p-5 h-full min-h-[100px] ${
-        improved
+      className={`flex flex-col items-center justify-center rounded-2xl border p-4 sm:p-5 h-full min-h-[100px] ${improved
           ? 'border-emerald-700/40 bg-emerald-950/40'
           : 'border-zinc-700/40 bg-zinc-900/40'
-      }`}
+        }`}
     >
       <div
         className={`text-2xl sm:text-3xl font-bold tabular-nums ${improved ? 'text-emerald-400' : 'text-zinc-400'}`}
@@ -178,7 +178,7 @@ function DeltaPill({ delta, pct }: { delta: number; pct: number }) {
 
 // ── "How it works" card ──────────────────────────────────────────────────────
 function HowItWorksCard({ icon, color, title, desc }: {
-  icon: string; color: string; title: string; desc: string
+  icon: React.ReactNode; color: string; title: string; desc: string
 }) {
   const [hovered, setHovered] = useState(false)
   return (
@@ -269,15 +269,15 @@ function isSimulationResultPayload(value: unknown): value is SimulationResult {
 }
 export default function SimulationPage() {
   const { currentCityId } = useCity()
-  const [zones, setZones]               = useState<Zone[]>([])
+  const [zones, setZones] = useState<Zone[]>([])
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null)
   const [vehicleReduction, setVehicleReduction] = useState(0)
-  const [greenIncrease, setGreenIncrease]       = useState(0)
-  const [reroutingFactor, setReroutingFactor]   = useState(0)
-  const [result, setResult]             = useState<SimulationResult | null>(null)
-  const [isLoading, setIsLoading]       = useState(false)
+  const [greenIncrease, setGreenIncrease] = useState(0)
+  const [reroutingFactor, setReroutingFactor] = useState(0)
+  const [result, setResult] = useState<SimulationResult | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const [isZoneLoading, setIsZoneLoading] = useState(true)
-  const [mounted, setMounted]           = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     const loadZones = async () => {
@@ -351,16 +351,7 @@ export default function SimulationPage() {
 
   // ── Loading state ─────────────────────────────────────────────────────────
   if (isZoneLoading) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
-          <p className="text-zinc-500 text-sm tracking-wide" style={{ fontFamily: FONT_BODY }}>
-            Loading simulation...
-          </p>
-        </div>
-      </div>
-    )
+    return <Loader variant="page" label="Loading simulation…" />
   }
 
   // ── No zones state ────────────────────────────────────────────────────────
@@ -393,12 +384,9 @@ export default function SimulationPage() {
           </div>
           <Link
             href="/zones/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm hover:bg-emerald-400 transition-colors"
+            className="inline-flex items-center justify-center px-5 py-2.5 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm hover:bg-emerald-400 transition-colors"
             style={{ boxShadow: '0 0 16px rgba(52,211,153,0.2)', fontFamily: FONT_DISPLAY }}
           >
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-            </svg>
             Create Zone
           </Link>
         </main>
@@ -516,21 +504,42 @@ export default function SimulationPage() {
               {/* Sliders */}
               <div className="space-y-6 mb-6">
                 <SliderControl
-                  label="Vehicle Reduction" icon="🚗"
+                  label="Vehicle Reduction"
+                  icon={
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="18" cy="17" r="2" /><circle cx="9" cy="17" r="2" />
+                    </svg>
+                  }
                   value={vehicleReduction} min={0} max={100} step={5} unit="%"
                   onChange={setVehicleReduction}
                   description="Reduce vehicle traffic intensity in the zone"
                   color="#f97316"
                 />
                 <SliderControl
-                  label="Green Cover Increase" icon="🌿"
+                  label="Green Cover Increase"
+                  icon={
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M12 22V12" strokeLinecap="round" />
+                      <path d="M12 12C12 8 7 5 7 5s0 5 5 7" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M12 12C12 8 17 5 17 5s0 5-5 7" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M12 17C12 13 6 10 6 10s1 7 6 7" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M12 17C12 13 18 10 18 10s-1 7-6 7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  }
                   value={greenIncrease} min={0} max={100} step={5} unit="%"
                   onChange={setGreenIncrease}
                   description="Add trees, parks, or green roofs"
                   color="#34d399"
                 />
                 <SliderControl
-                  label="Traffic Rerouting" icon="🛣️"
+                  label="Traffic Rerouting"
+                  icon={
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M3 3h6v6H3zM15 3h6v6h-6zM15 15h6v6h-6z" strokeLinejoin="round" />
+                      <path d="M6 9v3h12V9M6 12v3h9" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  }
                   value={reroutingFactor} min={0} max={1} step={0.1} unit="x"
                   onChange={setReroutingFactor}
                   description="Redirect traffic to alternative routes"
@@ -549,16 +558,11 @@ export default function SimulationPage() {
                 >
                   {isLoading ? (
                     <>
-                      <div className="w-4 h-4 rounded-full border-2 border-zinc-900/40 border-t-zinc-950 animate-spin" />
-                      Simulating...
+                      <Loader variant="inline" />
+                      Simulating…
                     </>
                   ) : (
-                    <>
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path d="M5 3l14 9-14 9V3z" strokeLinejoin="round" />
-                      </svg>
-                      Run Simulation
-                    </>
+                    'Run Simulation'
                   )}
                 </button>
                 <button
@@ -586,139 +590,139 @@ export default function SimulationPage() {
                   const deltaPct = safeNum(result.delta_percentage, 0)
                   return (
                     <>
-                <StepBadge n={2} label="Review Results" />
+                      <StepBadge n={2} label="Review Results" />
 
-                {/* Before / Delta / After — responsive grid */}
-                <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
-                  <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/60 p-3 sm:p-5 flex flex-col items-center gap-2 sm:gap-3">
-                    <span
-                      className="text-[10px] sm:text-[11px] font-bold text-zinc-500 uppercase tracking-[0.12em]"
-                      style={{ fontFamily: FONT_DISPLAY }}
-                    >
-                      Current
-                    </span>
-                    <AQIMeter value={beforeAqi} label="Before" color={aqiColor(beforeAqi)} delay={0} />
-                    <AQIBadge aqi={beforeAqi} />
-                  </div>
+                      {/* Before / Delta / After — responsive grid */}
+                      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+                        <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/60 p-3 sm:p-5 flex flex-col items-center gap-2 sm:gap-3">
+                          <span
+                            className="text-[10px] sm:text-[11px] font-bold text-zinc-500 uppercase tracking-[0.12em]"
+                            style={{ fontFamily: FONT_DISPLAY }}
+                          >
+                            Current
+                          </span>
+                          <AQIMeter value={beforeAqi} label="Before" color={aqiColor(beforeAqi)} delay={0} />
+                          <AQIBadge aqi={beforeAqi} />
+                        </div>
 
-                  <DeltaPill delta={delta} pct={deltaPct} />
+                        <DeltaPill delta={delta} pct={deltaPct} />
 
-                  {/* After */}
-                  <div
-                    className="rounded-2xl border bg-zinc-900/60 p-3 sm:p-5 flex flex-col items-center gap-2 sm:gap-3"
-                    style={{
-                      borderColor: `${aqiColor(afterAqi)}30`,
-                      boxShadow: `0 0 24px ${aqiColor(afterAqi)}10`,
-                    }}
-                  >
-                    <span
-                      className="text-[10px] sm:text-[11px] font-bold text-emerald-500 uppercase tracking-[0.12em]"
-                      style={{ fontFamily: FONT_DISPLAY }}
-                    >
-                      Projected
-                    </span>
-                    <AQIMeter value={afterAqi} label="After" color={aqiColor(afterAqi)} delay={200} />
-                    <AQIBadge aqi={afterAqi} />
-                  </div>
-                </div>
+                        {/* After */}
+                        <div
+                          className="rounded-2xl border bg-zinc-900/60 p-3 sm:p-5 flex flex-col items-center gap-2 sm:gap-3"
+                          style={{
+                            borderColor: `${aqiColor(afterAqi)}30`,
+                            boxShadow: `0 0 24px ${aqiColor(afterAqi)}10`,
+                          }}
+                        >
+                          <span
+                            className="text-[10px] sm:text-[11px] font-bold text-emerald-500 uppercase tracking-[0.12em]"
+                            style={{ fontFamily: FONT_DISPLAY }}
+                          >
+                            Projected
+                          </span>
+                          <AQIMeter value={afterAqi} label="After" color={aqiColor(afterAqi)} delay={200} />
+                          <AQIBadge aqi={afterAqi} />
+                        </div>
+                      </div>
 
-                {/* Impact summary */}
-                <div className="rounded-2xl border border-emerald-800/30 bg-emerald-950/20 p-4 sm:p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3
-                      className="text-sm font-semibold text-zinc-200"
-                      style={{ fontFamily: FONT_DISPLAY }}
-                    >
-                      Impact Summary
-                    </h3>
-                    <span className="text-xs text-zinc-500">Estimated reduction</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-zinc-800/60 overflow-hidden mb-4">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-1000 ease-out"
-                      style={{ width: `${Math.min(deltaPct, 100)}%` }}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <p className="text-xs text-zinc-500 mb-1">Total Reduction</p>
-                      <p
-                        className="text-xl sm:text-2xl font-bold text-emerald-400 tabular-nums"
-                        style={{ fontFamily: FONT_DISPLAY }}
-                      >
-                        −{delta.toFixed(2)} pts
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-zinc-500 mb-1">Percentage Change</p>
-                      <p
-                        className="text-xl sm:text-2xl font-bold text-emerald-400"
-                        style={{ fontFamily: FONT_DISPLAY }}
-                      >
-                        {formatPercentChange(-deltaPct)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                      {/* Impact summary */}
+                      <div className="rounded-2xl border border-emerald-800/30 bg-emerald-950/20 p-4 sm:p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3
+                            className="text-sm font-semibold text-zinc-200"
+                            style={{ fontFamily: FONT_DISPLAY }}
+                          >
+                            Impact Summary
+                          </h3>
+                          <span className="text-xs text-zinc-500">Estimated reduction</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-zinc-800/60 overflow-hidden mb-4">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-1000 ease-out"
+                            style={{ width: `${Math.min(deltaPct, 100)}%` }}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                          <div>
+                            <p className="text-xs text-zinc-500 mb-1">Total Reduction</p>
+                            <p
+                              className="text-xl sm:text-2xl font-bold text-emerald-400 tabular-nums"
+                              style={{ fontFamily: FONT_DISPLAY }}
+                            >
+                              −{delta.toFixed(2)} pts
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-zinc-500 mb-1">Percentage Change</p>
+                            <p
+                              className="text-xl sm:text-2xl font-bold text-emerald-400"
+                              style={{ fontFamily: FONT_DISPLAY }}
+                            >
+                              {formatPercentChange(-deltaPct)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
 
-                {/* How we got here */}
-                <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-4 sm:p-5">
-                  <h3
-                    className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2"
-                    style={{ fontFamily: FONT_DISPLAY }}
-                  >
-                    <svg width="13" height="13" fill="none" stroke="#34d399" strokeWidth="2" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
-                    </svg>
-                    How We Got Here
-                  </h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed whitespace-pre-wrap">
-                    {result.explanation}
-                  </p>
-                </div>
+                      {/* How we got here */}
+                      <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-4 sm:p-5">
+                        <h3
+                          className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2"
+                          style={{ fontFamily: FONT_DISPLAY }}
+                        >
+                          <svg width="13" height="13" fill="none" stroke="#34d399" strokeWidth="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
+                          </svg>
+                          How We Got Here
+                        </h3>
+                        <p className="text-zinc-400 text-sm leading-relaxed whitespace-pre-wrap">
+                          {result.explanation}
+                        </p>
+                      </div>
 
-                {/* Assessment */}
-                <div className="rounded-2xl border border-indigo-800/30 bg-indigo-950/20 p-4 sm:p-5">
-                  <h3
-                    className="text-sm font-semibold text-zinc-200 mb-2 flex items-center gap-2"
-                    style={{ fontFamily: FONT_DISPLAY }}
-                  >
-                    <svg width="13" height="13" fill="none" stroke="#818cf8" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 6v4l3 3" strokeLinecap="round" />
-                    </svg>
-                    Assessment
-                  </h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed">{result.recommendation}</p>
-                </div>
+                      {/* Assessment */}
+                      <div className="rounded-2xl border border-indigo-800/30 bg-indigo-950/20 p-4 sm:p-5">
+                        <h3
+                          className="text-sm font-semibold text-zinc-200 mb-2 flex items-center gap-2"
+                          style={{ fontFamily: FONT_DISPLAY }}
+                        >
+                          <svg width="13" height="13" fill="none" stroke="#818cf8" strokeWidth="2" viewBox="0 0 24 24">
+                            <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 6v4l3 3" strokeLinecap="round" />
+                          </svg>
+                          Assessment
+                        </h3>
+                        <p className="text-zinc-400 text-sm leading-relaxed">{result.recommendation}</p>
+                      </div>
 
-                {/* Limitations */}
-                <div className="rounded-2xl border border-amber-800/30 bg-amber-950/20 p-4 sm:p-5">
-                  <h4
-                    className="text-sm font-semibold text-amber-300 mb-3 flex items-center gap-2"
-                    style={{ fontFamily: FONT_DISPLAY }}
-                  >
-                    <svg width="13" height="13" fill="none" stroke="#fbbf24" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" strokeLinecap="round" />
-                    </svg>
-                    Important Limitations
-                  </h4>
-                  <ul className="space-y-2 text-sm text-zinc-400">
-                    {[
-                      'Projections are based on simplified models and should not drive real policy decisions.',
-                      'Real pollution reduction involves factors not captured here (weather, seasons, compliance).',
-                      'Interventions may have unintended consequences not represented in this linear model.',
-                      'Always validate findings with real-world data and expert consultation before implementation.',
-                    ].map((item, i) => (
-                      <li key={i} className="flex gap-2.5">
-                        <span className="text-amber-600 flex-shrink-0 mt-0.5">•</span>
-                        <span className="leading-relaxed">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                      {/* Limitations */}
+                      <div className="rounded-2xl border border-amber-800/30 bg-amber-950/20 p-4 sm:p-5">
+                        <h4
+                          className="text-sm font-semibold text-amber-300 mb-3 flex items-center gap-2"
+                          style={{ fontFamily: FONT_DISPLAY }}
+                        >
+                          <svg width="13" height="13" fill="none" stroke="#fbbf24" strokeWidth="2" viewBox="0 0 24 24">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" strokeLinecap="round" />
+                          </svg>
+                          Important Limitations
+                        </h4>
+                        <ul className="space-y-2 text-sm text-zinc-400">
+                          {[
+                            'Projections are based on simplified models and should not drive real policy decisions.',
+                            'Real pollution reduction involves factors not captured here (weather, seasons, compliance).',
+                            'Interventions may have unintended consequences not represented in this linear model.',
+                            'Always validate findings with real-world data and expert consultation before implementation.',
+                          ].map((item, i) => (
+                            <li key={i} className="flex gap-2.5">
+                              <span className="text-amber-600 flex-shrink-0 mt-0.5">•</span>
+                              <span className="leading-relaxed">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </>
                   )
                 })()}
@@ -764,17 +768,36 @@ export default function SimulationPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <HowItWorksCard
-              icon="🚗" color="#f97316"
+              icon={
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="18" cy="17" r="2" /><circle cx="9" cy="17" r="2" />
+                </svg>
+              }
+              color="#f97316"
               title="Vehicle Reduction"
               desc="We assume 40% of AQI is driven by vehicular emissions. Reducing vehicles by X% reduces this component proportionally."
             />
             <HowItWorksCard
-              icon="🌿" color="#34d399"
+              icon={
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path d="M12 22V12" strokeLinecap="round" />
+                  <path d="M12 12C12 8 7 5 7 5s0 5 5 7" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M12 12C12 8 17 5 17 5s0 5-5 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              }
+              color="#34d399"
               title="Green Coverage"
               desc="Vegetation acts as a natural filter. Each 1% increase in green cover is estimated to reduce AQI by 0.5 points in this model."
             />
             <HowItWorksCard
-              icon="🛣️" color="#60a5fa"
+              icon={
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path d="M3 3h6v6H3zM15 3h6v6h-6zM15 15h6v6h-6z" strokeLinejoin="round" />
+                  <path d="M6 9v3h12V9M6 12v3h9" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              }
+              color="#60a5fa"
               title="Traffic Rerouting"
               desc="Moving traffic to less sensitive areas can reduce local concentrations, but doesn't eliminate total pollution."
             />

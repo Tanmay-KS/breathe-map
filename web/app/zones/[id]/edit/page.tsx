@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { NavBar } from '@/components/nav-bar'
 import { FooterDisclaimer } from '@/components/footer-disclaimer'
 import { ZoneForm } from '@/components/zone-form'
+import { Loader } from '@/components/loader'
 import { Zone, AQIEstimate } from '@/lib/types'
 import { useCity } from '@/context/CityContext'
 import toast from 'react-hot-toast'
@@ -86,10 +87,7 @@ function ConfirmDialog({
                         style={{ boxShadow: '0 0 14px rgba(52,211,153,0.25)', fontFamily: FONT_DISPLAY }}
                     >
                         {isSaving ? (
-                            <>
-                                <div className="w-3.5 h-3.5 rounded-full border-2 border-zinc-900/30 border-t-zinc-900 animate-spin" />
-                                Saving…
-                            </>
+                            <Loader variant="inline" label="Saving…" />
                         ) : (
                             'Save Zone'
                         )}
@@ -197,16 +195,7 @@ export default function EditZonePage() {
 
     // ── Loading ───────────────────────────────────────────────────────────────
     if (isLoading) {
-        return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
-                    <p className="text-zinc-500 text-sm tracking-wide" style={{ fontFamily: FONT_BODY }}>
-                        Loading zone…
-                    </p>
-                </div>
-            </div>
-        )
+        return <Loader variant="page" label="Loading zone…" />
     }
 
     // ── Not found ─────────────────────────────────────────────────────────────
