@@ -18,6 +18,14 @@ function withinDateRange(value: string, dateFrom: string | null, dateTo: string 
   return true
 }
 
+function getReportCategory(aqi: number | null) {
+  if (aqi === null) return null
+  if (aqi <= 50) return 'good' as const
+  if (aqi <= 100) return 'moderate' as const
+  if (aqi <= 150) return 'poor' as const
+  return 'severe' as const
+}
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
@@ -121,10 +129,10 @@ export async function GET(request: Request) {
         lowest_aqi,
       },
       distribution: {
-        good: estimates.filter((item) => item.category === 'good').length,
-        moderate: estimates.filter((item) => item.category === 'moderate').length,
-        poor: estimates.filter((item) => item.category === 'poor').length,
-        severe: estimates.filter((item) => item.category === 'severe').length,
+        good: estimates.filter((item) => getReportCategory(item.estimated_aqi) === 'good').length,
+        moderate: estimates.filter((item) => getReportCategory(item.estimated_aqi) === 'moderate').length,
+        poor: estimates.filter((item) => getReportCategory(item.estimated_aqi) === 'poor').length,
+        severe: estimates.filter((item) => getReportCategory(item.estimated_aqi) === 'severe').length,
       },
       zones: zones.map((zone) => {
         const estimate = estimateMap.get(zone.id)
@@ -138,7 +146,8 @@ export async function GET(request: Request) {
           notes: zone.notes,
           created_at: zone.created_at,
           estimated_aqi: estimate?.estimated_aqi ?? null,
-          category: estimate?.category ?? null,
+          category: getReportCategory(estimate?.estimated_aqi ?? null),
+          feature_contributions: estimate?.feature_contributions ?? null,
         }
       }),
       simulation_summary: simulationSummary,
