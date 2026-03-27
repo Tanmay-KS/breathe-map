@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { NavBar } from '@/components/nav-bar'
 import { FooterDisclaimer } from '@/components/footer-disclaimer'
 import { AQIBadge } from '@/components/aqi-badge'
+import { Loader } from '@/components/loader'
 import { AQIEstimate, Zone } from '@/lib/types'
 import type { ZoneFeature } from '@/components/zone-map'
 import { aqiColor } from '@/components/zone-map'
@@ -15,19 +16,16 @@ import { toastInfo, toastSuccess, toastWarning } from '@/lib/toast'
 import { ZoneForm } from '@/components/zone-form'
 
 // ─── FONT CONFIG ────────────────────────────────────────────────────────────
-const FONT_IMPORT  = 'Google+Sans:wght@300;400;500;600;700'
+const FONT_IMPORT = 'Google+Sans:wght@300;400;500;600;700'
 const FONT_DISPLAY = "'Google Sans', sans-serif"
-const FONT_BODY    = "'Google Sans', sans-serif"
+const FONT_BODY = "'Google Sans', sans-serif"
 // ────────────────────────────────────────────────────────────────────────────
 
 const ZoneMap = dynamic(() => import('@/components/zone-map'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
-        <p className="text-zinc-400 text-sm">Initialising map…</p>
-      </div>
+      <Loader variant="inline" label="Initialising map…" />
     </div>
   ),
 })
@@ -75,17 +73,17 @@ function DonutChart({ good, moderate, poor, severe, total }: {
   const size = 120, cx = size / 2, cy = size / 2, r = 44
   const circumference = 2 * Math.PI * r
   const segments = [
-    { count: good,     color: '#34d399', label: 'Good'     },
+    { count: good, color: '#34d399', label: 'Good' },
     { count: moderate, color: '#fbbf24', label: 'Moderate' },
-    { count: poor,     color: '#f97316', label: 'Poor'     },
-    { count: severe,   color: '#f87171', label: 'Severe'   },
+    { count: poor, color: '#f97316', label: 'Poor' },
+    { count: severe, color: '#f87171', label: 'Severe' },
   ]
   let offset = 0
   const arcs = segments.map((s) => {
     const fraction = total > 0 ? s.count / total : 0
     const dash = animated ? fraction * circumference : 0
-    const gap  = circumference - dash
-    const arc  = { ...s, dash, gap, offset, fraction }
+    const gap = circumference - dash
+    const arc = { ...s, dash, gap, offset, fraction }
     offset += fraction * circumference
     return arc
   })
@@ -175,9 +173,9 @@ function StatCard({ label, value, sub, color, trend, trendLabel, icon, delay }: 
 function ZoneRow({ zone, estimate }: { zone: Zone; estimate?: AQIEstimate }) {
   const [hovered, setHovered] = useState(false)
   const dotColor =
-    estimate?.category === 'good'     ? '#34d399' :
-    estimate?.category === 'moderate' ? '#fbbf24' :
-    estimate?.category === 'poor'     ? '#f97316' : '#f87171'
+    estimate?.category === 'good' ? '#34d399' :
+      estimate?.category === 'moderate' ? '#fbbf24' :
+        estimate?.category === 'poor' ? '#f97316' : '#f87171'
 
   return (
     <Link
@@ -241,15 +239,15 @@ const EMPTY_SUMMARY = {
 
 export default function DashboardPage() {
   const { currentCityId } = useCity()
-  const [zones, setZones]       = useState<Zone[]>([])
+  const [zones, setZones] = useState<Zone[]>([])
   const [estimates, setEstimates] = useState<Map<string, AQIEstimate>>(new Map())
-  const [summary, setSummary]   = useState(EMPTY_SUMMARY)
+  const [summary, setSummary] = useState(EMPTY_SUMMARY)
   const [mapZones, setMapZones] = useState<ZoneFeature[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [mounted, setMounted]   = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [isPlacingZone, setIsPlacingZone] = useState(false)
   const [placedGeometry, setPlacedGeometry] = useState<GeoJSON.Polygon | null>(null)
-  const [showZoneModal, setShowZoneModal]   = useState(false)
+  const [showZoneModal, setShowZoneModal] = useState(false)
 
   const handleStartPlacement = useCallback(() => {
     setIsPlacingZone(true)
@@ -278,7 +276,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ ...formData, cityId: currentCityId, geometry: placedGeometry }),
       })
       if (!createRes.ok) throw new Error('Failed to create zone')
-      const createData  = await createRes.json()
+      const createData = await createRes.json()
       const createdZone = createData.zone as Zone
 
       const estimateRes = await fetch('/api/aqi/estimate', {
@@ -300,7 +298,7 @@ export default function DashboardPage() {
         geometry: (createdZone.geometry as GeoJSON.Geometry) ?? placedGeometry,
       }
       setMapZones((prev) => [...prev, newZone])
-      setZones((prev)    => [createdZone, ...prev])
+      setZones((prev) => [createdZone, ...prev])
       setEstimates((prev) => { const next = new Map(prev); next.set(createdZone.id, estimate); return next })
       setShowZoneModal(false)
       setPlacedGeometry(null)
@@ -314,15 +312,15 @@ export default function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const summaryRes  = await fetch(`/api/dashboard/summary?cityId=${currentCityId}`, { cache: 'no-store' })
+        const summaryRes = await fetch(`/api/dashboard/summary?cityId=${currentCityId}`, { cache: 'no-store' })
         const summaryData = await summaryRes.json()
         setZones(summaryData.zones ?? [])
         setEstimates(new Map(Object.entries(summaryData.estimates ?? {}) as [string, AQIEstimate][]))
         setSummary(summaryData.summary ?? EMPTY_SUMMARY)
 
-        const zonesRes  = await fetch(`/api/zones?cityId=${currentCityId}`, { cache: 'no-store' })
+        const zonesRes = await fetch(`/api/zones?cityId=${currentCityId}`, { cache: 'no-store' })
         const zonesData = await zonesRes.json()
-        const ze        = new Map(Object.entries(zonesData.estimates ?? {}) as [string, AQIEstimate][])
+        const ze = new Map(Object.entries(zonesData.estimates ?? {}) as [string, AQIEstimate][])
         const mappedZones: ZoneFeature[] = (zonesData.zones ?? []).map((zone: Zone) => ({
           id: zone.id, name: zone.name,
           landUseType: zone.land_use_type, trafficDensity: zone.traffic_density,
@@ -343,14 +341,7 @@ export default function DashboardPage() {
   }, [currentCityId])
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
-          <p className="text-zinc-400 text-sm" style={{ fontFamily: FONT_BODY }}>Loading dashboard...</p>
-        </div>
-      </div>
-    )
+    return <Loader variant="page" label="Loading dashboard…" />
   }
 
   const { average_aqi, highest_aqi, lowest_aqi, total_zones, distribution } = summary
@@ -401,25 +392,22 @@ export default function DashboardPage() {
           */}
           <Link
             href="/zones/new"
-            className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-500 text-zinc-950 font-bold rounded-xl text-sm flex-shrink-0 hover:bg-emerald-400 transition-colors"
+            className="inline-flex items-center justify-center px-5 py-3 bg-emerald-500 text-zinc-950 font-bold rounded-xl text-sm flex-shrink-0 hover:bg-emerald-400 transition-colors"
             style={{
               boxShadow: '0 0 20px rgba(52,211,153,0.28), 0 4px 12px rgba(0,0,0,0.3)',
               fontFamily: FONT_DISPLAY,
             }}
           >
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-            </svg>
             Create Zone
           </Link>
         </div>
 
         {/* ── Stat cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
-          <StatCard label="Average AQI"  value={average_aqi}  sub={`Across ${total_zones} zones`}  color="#fbbf24" trend="flat" trendLabel="Stable"          icon={<BarChart3    size={18} color="#fbbf24" />} delay={80}  />
-          <StatCard label="Highest AQI"  value={highest_aqi}  sub="Most polluted zone"              color="#f97316" trend="up"   trendLabel="+5 pts"          icon={<AlertTriangle size={18} color="#f97316" />} delay={160} />
-          <StatCard label="Lowest AQI"   value={lowest_aqi}   sub="Cleanest zone"                   color="#34d399" trend="down" trendLabel="-2 pts"          icon={<CheckCircle  size={18} color="#34d399" />} delay={240} />
-          <StatCard label="Total Zones"  value={total_zones}  sub="Active monitoring areas"         color="#818cf8" trend="flat" trendLabel="100% Operational" icon={<MapPin       size={18} color="#818cf8" />} delay={320} />
+          <StatCard label="Average AQI" value={average_aqi} sub={`Across ${total_zones} zones`} color="#fbbf24" trend="flat" trendLabel="Stable" icon={<BarChart3 size={18} color="#fbbf24" />} delay={80} />
+          <StatCard label="Highest AQI" value={highest_aqi} sub="Most polluted zone" color="#f97316" trend="up" trendLabel="+5 pts" icon={<AlertTriangle size={18} color="#f97316" />} delay={160} />
+          <StatCard label="Lowest AQI" value={lowest_aqi} sub="Cleanest zone" color="#34d399" trend="down" trendLabel="-2 pts" icon={<CheckCircle size={18} color="#34d399" />} delay={240} />
+          <StatCard label="Total Zones" value={total_zones} sub="Active monitoring areas" color="#818cf8" trend="flat" trendLabel="100% Operational" icon={<MapPin size={18} color="#818cf8" />} delay={320} />
         </div>
 
         {/* ── Zone Map ── */}
@@ -480,12 +468,9 @@ export default function DashboardPage() {
                 </div>
                 <Link
                   href="/zones/new"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm hover:bg-emerald-400 transition-colors"
+                  className="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm hover:bg-emerald-400 transition-colors"
                   style={{ boxShadow: '0 0 12px rgba(52,211,153,0.2)', fontFamily: FONT_DISPLAY }}
                 >
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-                  </svg>
                   Add First Zone
                 </Link>
               </div>
