@@ -9,6 +9,7 @@ import { Loader } from '@/components/loader'
 import { Zone, AQIEstimate } from '@/lib/types'
 import { useCity } from '@/context/CityContext'
 import { Home, Building2, Factory, Trees, Layers, MapPin } from 'lucide-react'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 // ─── FONT CONFIG ────────────────────────────────────────────────────────────
 // Edit these values to change fonts across the entire page in one place.
@@ -29,10 +30,11 @@ const LAND_USE_ICONS: Record<string, React.ReactNode> = {
 }
 
 function aqiBarColor(aqi: number) {
-  if (aqi <= 50) return '#34d399'
-  if (aqi <= 100) return '#fbbf24'
-  if (aqi <= 150) return '#f97316'
-  return '#f87171'
+  if (aqi <= 50)  return '#34d399' // Good
+  if (aqi <= 100) return '#fbbf24' // Satisfactory
+  if (aqi <= 200) return '#f97316' // Moderate
+  if (aqi <= 300) return '#ef4444' // Poor
+  return '#a855f7'                  // Severe
 }
 
 // Mini bar used in the table for traffic / population
@@ -48,13 +50,21 @@ function MiniBar({ value, color }: { value: number; color: string }) {
 }
 
 // ── Mobile card (shown below md) ─────────────────────────────────────────────
-function ZoneCard({ zone, estimate, index }: { zone: Zone; estimate?: AQIEstimate; index: number }) {
+function ZoneCard({
+  zone, estimate, index, selected, onSelect,
+}: {
+  zone: Zone; estimate?: AQIEstimate; index: number
+  selected: boolean; onSelect: (id: string) => void
+}) {
   const [hovered, setHovered] = useState(false)
   const color = estimate ? aqiBarColor(estimate.estimated_aqi) : '#52525b'
 
   return (
-    <Link
-      href={`/zones/${zone.id}`}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(zone.id)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(zone.id) }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -63,20 +73,31 @@ function ZoneCard({ zone, estimate, index }: { zone: Zone; estimate?: AQIEstimat
         animationTimingFunction: 'ease',
         animationFillMode: 'both',
         animationDelay: `${index * 40}ms`,
-        borderColor: hovered ? 'rgba(52,211,153,0.2)' : 'rgba(63,63,70,0.5)',
-        backgroundColor: hovered ? 'rgba(52,211,153,0.03)' : 'rgba(24,24,27,0.6)',
+        borderColor: selected
+          ? 'rgba(239,68,68,0.45)'
+          : hovered ? 'rgba(52,211,153,0.2)' : 'rgba(63,63,70,0.5)',
+        backgroundColor: selected
+          ? 'rgba(239,68,68,0.04)'
+          : hovered ? 'rgba(52,211,153,0.03)' : 'rgba(24,24,27,0.6)',
         transition: 'border-color 0.15s ease, background-color 0.15s ease, transform 0.2s ease',
         transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
       }}
-      className="block rounded-xl border p-4 cursor-pointer"
+      className="block rounded-xl border p-4 cursor-pointer w-full text-left"
     >
       {/* Top row: name + AQI badge */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div
-            className="w-2 h-2 rounded-full flex-shrink-0 mt-0.5"
-            style={{ backgroundColor: color, boxShadow: hovered ? `0 0 6px ${color}` : 'none' }}
-          />
+          {selected && (
+            <div className="w-4 h-4 rounded-full bg-red-500/20 border border-red-500/50 flex items-center justify-center flex-shrink-0">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+            </div>
+          )}
+          {!selected && (
+            <div
+              className="w-2 h-2 rounded-full flex-shrink-0 mt-0.5"
+              style={{ backgroundColor: color, boxShadow: hovered ? `0 0 6px ${color}` : 'none' }}
+            />
+          )}
           <p
             className="font-semibold text-sm text-zinc-100 truncate"
             style={{ fontFamily: FONT_DISPLAY }}
@@ -84,10 +105,22 @@ function ZoneCard({ zone, estimate, index }: { zone: Zone; estimate?: AQIEstimat
             {zone.name}
           </p>
         </div>
-        {estimate
-          ? <AQIBadge aqi={estimate.estimated_aqi} showValue={true} />
-          : <span className="text-xs text-zinc-600">—</span>
-        }
+        <div className="flex items-center gap-2">
+          {estimate
+            ? <AQIBadge aqi={estimate.estimated_aqi} showValue={true} />
+            : <span className="text-xs text-zinc-600">—</span>
+          }
+          <Link
+            href={`/zones/${zone.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="text-zinc-600 hover:text-emerald-400 transition-colors"
+            title="View details"
+          >
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        </div>
       </div>
 
       {/* Bottom row: type + bars */}
@@ -107,51 +140,57 @@ function ZoneCard({ zone, estimate, index }: { zone: Zone; estimate?: AQIEstimat
           <MiniBar value={zone.population_density} color="#818cf8" />
         </span>
       </div>
-
-      {/* Chevron hint */}
-      <div className="flex justify-end mt-2">
-        <svg
-          width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
-          style={{ color: hovered ? '#34d399' : '#3f3f46', transition: 'color 0.15s ease' }}
-        >
-          <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-    </Link>
+    </div>
   )
 }
 
 // ── Desktop table row (shown at md and above) ────────────────────────────────
-function ZoneRow({ zone, estimate, index }: { zone: Zone; estimate?: AQIEstimate; index: number }) {
+function ZoneRow({
+  zone, estimate, index, selected, onSelect,
+}: {
+  zone: Zone; estimate?: AQIEstimate; index: number
+  selected: boolean; onSelect: (id: string) => void
+}) {
   const [hovered, setHovered] = useState(false)
   const color = estimate ? aqiBarColor(estimate.estimated_aqi) : '#52525b'
 
   return (
-    <Link
-      href={`/zones/${zone.id}`}
+    <div
+      role="row"
+      onClick={() => onSelect(zone.id)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        backgroundColor: hovered ? 'rgba(52,211,153,0.03)' : 'transparent',
-        borderBottomColor: 'rgba(39,39,42,0.5)',
+        backgroundColor: selected
+          ? 'rgba(239,68,68,0.04)'
+          : hovered ? 'rgba(52,211,153,0.03)' : 'transparent',
+        borderBottomColor: selected ? 'rgba(239,68,68,0.2)' : 'rgba(39,39,42,0.5)',
         transition: 'background-color 0.15s ease',
         animationName: 'fadeSlideUp',
         animationDuration: '0.4s',
         animationTimingFunction: 'ease',
         animationFillMode: 'both',
         animationDelay: `${index * 40}ms`,
+        outline: selected ? '1px solid rgba(239,68,68,0.25)' : 'none',
+        outlineOffset: '-1px',
       }}
       className="grid grid-cols-12 gap-3 px-5 py-3.5 border-b last:border-b-0 cursor-pointer"
     >
       {/* Name — 4 cols */}
       <div className="col-span-4 flex items-center gap-3 min-w-0">
-        <div
-          className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200"
-          style={{ backgroundColor: color, boxShadow: hovered ? `0 0 5px ${color}` : 'none' }}
-        />
+        {selected ? (
+          <div className="w-3.5 h-3.5 rounded-full bg-red-500/20 border border-red-500/50 flex items-center justify-center flex-shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+          </div>
+        ) : (
+          <div
+            className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200"
+            style={{ backgroundColor: color, boxShadow: hovered ? `0 0 5px ${color}` : 'none' }}
+          />
+        )}
         <p
           className="font-semibold text-[13px] truncate transition-colors duration-150"
-          style={{ color: hovered ? '#e4e4e7' : '#a1a1aa', fontFamily: FONT_DISPLAY }}
+          style={{ color: selected ? '#fca5a5' : hovered ? '#e4e4e7' : '#a1a1aa', fontFamily: FONT_DISPLAY }}
         >
           {zone.name}
         </p>
@@ -185,20 +224,111 @@ function ZoneRow({ zone, estimate, index }: { zone: Zone; estimate?: AQIEstimate
         }
       </div>
 
-      {/* Arrow — 1 col */}
+      {/* Navigate arrow — 1 col */}
       <div className="col-span-1 flex items-center justify-end">
-        <svg
-          width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
-          style={{
-            color: hovered ? '#34d399' : '#3f3f46',
-            transition: 'color 0.15s ease, transform 0.2s ease',
-            transform: hovered ? 'translateX(2px)' : 'translateX(0)',
-          }}
+        <Link
+          href={`/zones/${zone.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-zinc-800/50 transition-colors"
+          title="View details"
         >
-          <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+          <svg
+            width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+            style={{ color: hovered ? '#34d399' : '#3f3f46', transition: 'color 0.15s ease' }}
+          >
+            <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
       </div>
-    </Link>
+    </div>
+  )
+}
+
+// ── Delete Confirmation Dialog ─────────────────────────────────────────────────
+function DeleteConfirmDialog({
+  zoneName,
+  onConfirm,
+  onCancel,
+  isDeleting,
+}: {
+  zoneName: string
+  onConfirm: () => void
+  onCancel: () => void
+  isDeleting: boolean
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl border overflow-hidden"
+        style={{
+          background: '#18181b',
+          borderColor: 'rgba(255,255,255,0.1)',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.8)',
+          animation: 'deleteDialogIn 0.2s cubic-bezier(0.16,1,0.3,1) both',
+        }}
+      >
+        <style>{`
+          @keyframes deleteDialogIn {
+            from { opacity: 0; transform: scale(0.93) translateY(12px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+          }
+        `}</style>
+        <div className="px-6 pt-6 pb-5">
+          {/* Icon */}
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+          >
+            <svg width="18" height="18" fill="none" stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24">
+              <polyline points="3 6 5 6 21 6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M10 11v6M14 11v6" strokeLinecap="round" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h2 className="text-base font-bold text-zinc-100 mb-1" style={{ fontFamily: FONT_DISPLAY }}>
+            Delete Zone
+          </h2>
+          <p className="text-sm text-zinc-400 leading-relaxed" style={{ fontFamily: FONT_BODY }}>
+            Are you sure you want to delete{' '}
+            <span className="text-zinc-200 font-semibold">&ldquo;{zoneName}&rdquo;</span>?
+            This action cannot be undone.
+          </p>
+        </div>
+        <div className="flex gap-2.5 px-6 pb-5">
+          <button
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="flex-1 py-2.5 border border-zinc-700/60 text-zinc-400 font-semibold rounded-xl text-sm hover:border-zinc-600 hover:text-zinc-300 transition-all disabled:opacity-50"
+            style={{ fontFamily: FONT_DISPLAY }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex-1 py-2.5 font-semibold rounded-xl text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{
+              background: '#ef4444',
+              color: '#fff',
+              boxShadow: '0 0 14px rgba(239,68,68,0.25)',
+              fontFamily: FONT_DISPLAY,
+            }}
+          >
+            {isDeleting ? (
+              <>
+                <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                Deleting…
+              </>
+            ) : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -210,6 +340,9 @@ export default function ZonesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [filter, setFilter] = useState<string>('all')
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const loadZones = async () => {
@@ -228,6 +361,29 @@ export default function ZonesPage() {
     void loadZones()
   }, [currentCityId])
 
+  const handleDeleteZone = async () => {
+    if (!selectedZoneId) return
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/zones/${selectedZoneId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete zone')
+      setZones((prev) => prev.filter((z) => z.id !== selectedZoneId))
+      setEstimates((prev) => {
+        const next = new Map(prev)
+        next.delete(selectedZoneId)
+        return next
+      })
+      const deleted = zones.find((z) => z.id === selectedZoneId)
+      setSelectedZoneId(null)
+      setShowDeleteConfirm(false)
+      toastSuccess(`Zone "${deleted?.name ?? ''}" deleted successfully`)
+    } catch {
+      toastError('Failed to delete zone. Please try again.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (isLoading) {
     return <Loader variant="page" label="Loading zones…" />
   }
@@ -235,10 +391,11 @@ export default function ZonesPage() {
   const FILTERS = ['all', 'residential', 'commercial', 'industrial', 'green_space', 'mixed']
   const filteredZones = filter === 'all' ? zones : zones.filter((z) => z.land_use_type === filter)
 
-  const goodCount = Array.from(estimates.values()).filter((e) => e.category === 'good').length
-  const moderateCount = Array.from(estimates.values()).filter((e) => e.category === 'moderate').length
-  const poorCount = Array.from(estimates.values()).filter((e) => e.category === 'poor').length
-  const severeCount = Array.from(estimates.values()).filter((e) => e.category === 'severe').length
+  const goodCount         = Array.from(estimates.values()).filter((e) => e.category === 'good').length
+  const satisfactoryCount = Array.from(estimates.values()).filter((e) => e.category === 'satisfactory').length
+  const moderateCount     = Array.from(estimates.values()).filter((e) => e.category === 'moderate').length
+  const poorCount         = Array.from(estimates.values()).filter((e) => e.category === 'poor').length
+  const severeCount       = Array.from(estimates.values()).filter((e) => e.category === 'severe').length
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
@@ -303,13 +460,33 @@ export default function ZonesPage() {
               Manage monitoring zones and view estimated AQI values for each area.
             </p>
           </div>
-          <Link
-            href="/zones/new"
-            className="glow-btn inline-flex items-center justify-center px-5 py-3 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm flex-shrink-0 w-full sm:w-auto"
-            style={{ fontFamily: FONT_DISPLAY }}
-          >
-            New Zone
-          </Link>
+          <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+            <button
+              onClick={() => {
+                if (!selectedZoneId) {
+                  toastError('Please select a zone first by clicking on it in the list.')
+                  return
+                }
+                setShowDeleteConfirm(true)
+              }}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-3 border border-red-800/50 text-red-400 font-semibold rounded-xl text-sm hover:bg-red-900/20 hover:border-red-700/60 transition-all duration-200"
+              style={{ fontFamily: FONT_DISPLAY }}
+            >
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <polyline points="3 6 5 6 21 6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Delete Zone
+            </button>
+            <Link
+              href="/zones/new"
+              className="glow-btn flex-1 sm:flex-none inline-flex items-center justify-center px-5 py-3 bg-emerald-500 text-zinc-950 font-semibold rounded-xl text-sm"
+              style={{ fontFamily: FONT_DISPLAY }}
+            >
+              New Zone
+            </Link>
+          </div>
         </div>
 
         {/* ── AQI summary pills ── */}
@@ -318,10 +495,11 @@ export default function ZonesPage() {
           className="flex flex-wrap gap-2 mb-5 sm:mb-6"
         >
           {[
-            { label: 'Good', count: goodCount, color: '#34d399' },
-            { label: 'Moderate', count: moderateCount, color: '#fbbf24' },
-            { label: 'Poor', count: poorCount, color: '#f97316' },
-            { label: 'Severe', count: severeCount, color: '#f87171' },
+            { label: 'Good',         count: goodCount,         color: '#34d399' },
+            { label: 'Satisfactory', count: satisfactoryCount, color: '#fbbf24' },
+            { label: 'Moderate',     count: moderateCount,     color: '#f97316' },
+            { label: 'Poor',         count: poorCount,         color: '#ef4444' },
+            { label: 'Severe',       count: severeCount,       color: '#a855f7' },
           ].map((s) => (
             <div
               key={s.label}
@@ -425,6 +603,8 @@ export default function ZonesPage() {
                   zone={zone}
                   estimate={estimates.get(zone.id)}
                   index={index}
+                  selected={selectedZoneId === zone.id}
+                  onSelect={(id) => setSelectedZoneId((prev) => prev === id ? null : id)}
                 />
               ))}
             </div>
@@ -458,6 +638,8 @@ export default function ZonesPage() {
                   zone={zone}
                   estimate={estimates.get(zone.id)}
                   index={index}
+                  selected={selectedZoneId === zone.id}
+                  onSelect={(id) => setSelectedZoneId((prev) => prev === id ? null : id)}
                 />
               ))}
 
@@ -502,6 +684,16 @@ export default function ZonesPage() {
 
       </main>
       <FooterDisclaimer />
+
+      {/* ── Delete Confirmation ── */}
+      {showDeleteConfirm && selectedZoneId && (
+        <DeleteConfirmDialog
+          zoneName={zones.find((z) => z.id === selectedZoneId)?.name ?? ''}
+          onConfirm={handleDeleteZone}
+          onCancel={() => setShowDeleteConfirm(false)}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   )
 }

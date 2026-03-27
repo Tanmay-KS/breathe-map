@@ -214,8 +214,6 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
     const [zones, setZones] = useState<Zone[]>([])
     const [estimates, setEstimates] = useState<Map<string, AQIEstimate>>(new Map())
     const [selectedZoneIds, setSelectedZoneIds] = useState<Set<string>>(new Set())
-    const [dateFrom, setDateFrom] = useState('')
-    const [dateTo, setDateTo] = useState('')
     const [format, setFormat] = useState<ExportFormat>('csv')
     const [isLoadingZones, setIsLoadingZones] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
@@ -241,7 +239,6 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
     useEffect(() => {
         if (open) {
             setSelectedCityId(currentCityId)
-            setDateFrom(''); setDateTo('')
             setFormat('csv'); setIsExporting(false)
         }
     }, [open, currentCityId])
@@ -264,16 +261,9 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
 
     const handleExport = async () => {
         const exportZones = zones.filter((z) => selectedZoneIds.has(z.id))
-        // Apply date filter if set
-        const filtered = exportZones.filter((z) => {
-            const created = new Date(z.created_at)
-            if (dateFrom && created < new Date(dateFrom)) return false
-            if (dateTo && created > new Date(dateTo + 'T23:59:59')) return false
-            return true
-        })
 
-        if (filtered.length === 0) {
-            toast.error('No zones match the selected filters')
+        if (exportZones.length === 0) {
+            toast.error('No zones selected')
             return
         }
 
@@ -281,10 +271,8 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
         try {
             const params = new URLSearchParams({
                 cityId: selectedCityId,
-                zoneIds: filtered.map((zone) => zone.id).join(','),
+                zoneIds: exportZones.map((zone) => zone.id).join(','),
             })
-            if (dateFrom) params.set('dateFrom', dateFrom)
-            if (dateTo) params.set('dateTo', dateTo)
 
             const response = await fetch(`/api/reports/summary?${params.toString()}`, { cache: 'no-store' })
             const report = await response.json()
@@ -295,10 +283,10 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
 
             if (format === 'csv') {
                 exportCSV(report as SummaryReport)
-                toast.success(`CSV exported — ${filtered.length} zone${filtered.length > 1 ? 's' : ''}`)
+                toast.success(`CSV exported — ${exportZones.length} zone${exportZones.length > 1 ? 's' : ''}`)
             } else {
                 await exportPDF(report as SummaryReport)
-                toast.success(`PDF exported — ${filtered.length} zone${filtered.length > 1 ? 's' : ''}`)
+                toast.success(`PDF exported — ${exportZones.length} zone${exportZones.length > 1 ? 's' : ''}`)
             }
             onClose()
         } catch (err) {
@@ -427,24 +415,7 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
                         </select>
                     </div>
 
-                    {/* Date range */}
-                    <div>
-                        <label className="block text-xs font-bold text-zinc-400 uppercase tracking-[0.12em] mb-2" style={{ fontFamily: FONT_DISPLAY }}>
-                            Date Range <span className="text-zinc-600 normal-case tracking-normal font-medium">(optional)</span>
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <p className="text-[11px] text-zinc-600 mb-1" style={{ fontFamily: FONT_BODY }}>From</p>
-                                <input type="date" className="exp-input" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-                            </div>
-                            <div>
-                                <p className="text-[11px] text-zinc-600 mb-1" style={{ fontFamily: FONT_BODY }}>To</p>
-                                <input type="date" className="exp-input" value={dateTo} onChange={(e) => setDateTo(e.target.value)} min={dateFrom} />
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Zone selection */}
                     <div>
                         <div className="flex items-center justify-between mb-2.5">
                             <label className="text-xs font-bold text-zinc-400 uppercase tracking-[0.12em]" style={{ fontFamily: FONT_DISPLAY }}>

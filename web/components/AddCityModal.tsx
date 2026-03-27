@@ -422,7 +422,7 @@ export function AddCityModal({ open, onClose }: AddCityModalProps) {
                                     Adding City…
                                 </>
                             ) : (
-                                '🏙️ Add City'
+                                'Add City'
                             )}
                         </button>
                     )}

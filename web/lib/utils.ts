@@ -12,9 +12,11 @@ export function cn(...inputs: ClassValue[]) {
  * Format AQI value with appropriate styling
  */
 export function formatAQI(aqi: number): string {
-  if (aqi <= 50) return 'Good'
-  if (aqi <= 100) return 'Moderate'
-  if (aqi <= 150) return 'Poor'
+  if (aqi <= 50)  return 'Good'
+  if (aqi <= 100) return 'Satisfactory'
+  if (aqi <= 200) return 'Moderate'
+  if (aqi <= 300) return 'Poor'
+  if (aqi <= 400) return 'Severe'
   return 'Severe'
 }
 
@@ -22,9 +24,10 @@ export function formatAQI(aqi: number): string {
  * Get CSS class for AQI badge based on value
  */
 export function getAQIBadgeClass(aqi: number): string {
-  if (aqi <= 50) return 'aqi-good'
-  if (aqi <= 100) return 'aqi-moderate'
-  if (aqi <= 150) return 'aqi-poor'
+  if (aqi <= 50)  return 'aqi-good'
+  if (aqi <= 100) return 'aqi-satisfactory'
+  if (aqi <= 200) return 'aqi-moderate'
+  if (aqi <= 300) return 'aqi-poor'
   return 'aqi-severe'
 }
 

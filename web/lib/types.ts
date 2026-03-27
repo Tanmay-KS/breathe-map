@@ -10,7 +10,7 @@ export type LandUseType =
   | 'green_space' 
   | 'mixed'
 
-export type AQICategory = 'good' | 'moderate' | 'poor' | 'severe'
+export type AQICategory = 'good' | 'satisfactory' | 'moderate' | 'poor' | 'severe'
 
 export interface Zone {
   id: string
