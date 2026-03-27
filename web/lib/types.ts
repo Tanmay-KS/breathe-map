@@ -33,6 +33,52 @@ export interface City {
   zoom?: number
 }
 
+export interface ReportZoneRow {
+  id: string
+  name: string
+  land_use_type: LandUseType
+  traffic_density: number
+  population_density: number
+  road_length: number
+  notes: string
+  created_at: string
+  estimated_aqi: number | null
+  category: AQICategory | null
+}
+
+export interface ReportSimulationSummary {
+  total_runs: number
+  average_delta: number
+  best_delta: number
+  latest_run_at: string | null
+  latest_scenario_name: string | null
+}
+
+export interface SummaryReport {
+  city: City
+  overview: {
+    zone_count: number
+    average_aqi: number
+    highest_aqi: number
+    lowest_aqi: number
+  }
+  distribution: {
+    good: number
+    moderate: number
+    poor: number
+    severe: number
+  }
+  zones: ReportZoneRow[]
+  simulation_summary: ReportSimulationSummary
+  generated_at: string
+  filters: {
+    city_id: string
+    date_from: string | null
+    date_to: string | null
+    zone_ids: string[]
+  }
+}
+
 export interface AQIEstimate {
   zone_id: string
   estimated_aqi: number
