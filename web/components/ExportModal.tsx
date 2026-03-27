@@ -17,6 +17,164 @@ interface ExportModalProps {
 
 type ExportFormat = 'csv' | 'pdf'
 
+type PieSlice = {
+    label: string
+    value: number
+    color: string
+}
+
+type PieLabel = 'Traffic' | 'Population' | 'Road' | 'Land Use'
+
+const PIE_COLORS: Record<PieLabel, string> = {
+    Traffic: '#34d399',
+    Population: '#60a5fa',
+    Road: '#fbbf24',
+    'Land Use': '#f97316',
+}
+
+function titleCase(value: string | null | undefined) {
+    if (!value) return 'N/A'
+    return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+function getLandUseWeight(landUse: Zone['land_use_type']) {
+    switch (landUse) {
+        case 'green_space':
+            return 10
+        case 'residential':
+            return 28
+        case 'commercial':
+            return 45
+        case 'mixed':
+            return 55
+        case 'industrial':
+            return 70
+        default:
+            return 30
+    }
+}
+
+function getZonePieSlices(zone: SummaryReport['zones'][number]): PieSlice[] {
+    const fallbackSlices: PieSlice[] = [
+        { label: 'Traffic', value: Math.max(0, zone.traffic_density), color: PIE_COLORS.Traffic },
+        { label: 'Population', value: Math.max(0, zone.population_density), color: PIE_COLORS.Population },
+        { label: 'Road', value: Math.max(0, zone.road_length * 5), color: PIE_COLORS.Road },
+        { label: 'Land Use', value: getLandUseWeight(zone.land_use_type), color: PIE_COLORS['Land Use'] },
+    ]
+
+    const contributions = zone.feature_contributions
+    if (!contributions) return fallbackSlices
+
+    const fromModel: PieSlice[] = [
+        { label: 'Traffic', value: Math.abs(Number(contributions.traffic ?? 0)), color: PIE_COLORS.Traffic },
+        { label: 'Population', value: Math.abs(Number(contributions.population ?? 0)), color: PIE_COLORS.Population },
+        { label: 'Road', value: Math.abs(Number(contributions.road_network ?? 0)), color: PIE_COLORS.Road },
+        { label: 'Land Use', value: Math.abs(Number(contributions.land_use ?? 0)), color: PIE_COLORS['Land Use'] },
+    ]
+
+    const total = fromModel.reduce((sum, slice) => sum + slice.value, 0)
+    return total > 0 ? fromModel : fallbackSlices
+}
+
+function getCityPieSlices(report: SummaryReport): PieSlice[] {
+    if (report.zones.length === 0) {
+        return [
+            { label: 'Traffic', value: 1, color: PIE_COLORS.Traffic },
+            { label: 'Population', value: 1, color: PIE_COLORS.Population },
+            { label: 'Road', value: 1, color: PIE_COLORS.Road },
+            { label: 'Land Use', value: 1, color: PIE_COLORS['Land Use'] },
+        ]
+    }
+
+    const totals = report.zones.reduce<Record<PieLabel, number>>(
+        (acc, zone) => {
+            const slices = getZonePieSlices(zone)
+            for (const slice of slices) {
+                acc[slice.label as PieLabel] += slice.value
+            }
+            return acc
+        },
+        { Traffic: 0, Population: 0, Road: 0, 'Land Use': 0 }
+    )
+
+    return [
+        { label: 'Traffic', value: totals.Traffic, color: PIE_COLORS.Traffic },
+        { label: 'Population', value: totals.Population, color: PIE_COLORS.Population },
+        { label: 'Road', value: totals.Road, color: PIE_COLORS.Road },
+        { label: 'Land Use', value: totals['Land Use'], color: PIE_COLORS['Land Use'] },
+    ]
+}
+
+function renderBarCard(title: string, subtitle: string, slices: PieSlice[]) {
+    const canvas = document.createElement('canvas')
+    canvas.width = 540
+    canvas.height = 320
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return ''
+
+    ctx.fillStyle = '#18181b'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'
+    ctx.lineWidth = 2
+    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2)
+
+    ctx.fillStyle = '#f4f4f5'
+    ctx.font = 'bold 28px Helvetica'
+    ctx.fillText(title, 24, 38)
+
+    ctx.fillStyle = '#a1a1aa'
+    ctx.font = '18px Helvetica'
+    ctx.fillText(subtitle, 24, 68)
+
+    const maxValue = Math.max(...slices.map((slice) => slice.value), 1)
+    const barX = 32
+    const barY = 110
+    const barTrackWidth = 280
+    const barHeight = 18
+    const rowGap = 42
+
+    ctx.fillStyle = '#71717a'
+    ctx.font = '16px Helvetica'
+
+    let legendY = barY
+    for (const slice of slices) {
+        const barWidth = Math.max(8, (slice.value / maxValue) * barTrackWidth)
+
+        ctx.fillStyle = '#e4e4e7'
+        ctx.font = '18px Helvetica'
+        ctx.fillText(slice.label, barX, legendY - 10)
+
+        ctx.fillStyle = '#27272a'
+        ctx.fillRect(barX, legendY, barTrackWidth, barHeight)
+
+        ctx.fillStyle = slice.color
+        ctx.fillRect(barX, legendY, barWidth, barHeight)
+
+        ctx.fillStyle = '#a1a1aa'
+        ctx.font = '16px Helvetica'
+        ctx.fillText(`${slice.value.toFixed(1)}`, 330, legendY + 14)
+        legendY += rowGap
+    }
+
+    ctx.fillStyle = '#71717a'
+    ctx.font = '15px Helvetica'
+    ctx.fillText('Higher bars indicate stronger modeled contribution to AQI.', 24, 292)
+
+    ctx.fillStyle = '#52525b'
+    ctx.font = '13px Helvetica'
+    const ticks = 4
+    for (let i = 0; i <= ticks; i++) {
+        const ratio = i / ticks
+        const x = barX + ratio * barTrackWidth
+        ctx.fillRect(x, barY - 2, 1, rowGap * slices.length - 18)
+        ctx.fillText(`${Math.round(maxValue * ratio)}`, x - 6, 102)
+    }
+
+    return canvas.toDataURL('image/png')
+}
+
 // ── CSV Export ────────────────────────────────────────────────────────────────
 function exportCSV(report: SummaryReport) {
     const headers = ['Zone Name', 'Land Use Type', 'Traffic Density (%)', 'Population Density (%)', 'Road Length (km)', 'Estimated AQI', 'AQI Category', 'Notes', 'Created At']
@@ -28,7 +186,7 @@ function exportCSV(report: SummaryReport) {
         zone.population_density,
         zone.road_length,
         zone.estimated_aqi ?? 'N/A',
-        zone.category ?? 'N/A',
+        titleCase(zone.category),
         zone.notes || '',
         zone.created_at,
     ])
@@ -73,29 +231,28 @@ async function exportPDF(report: SummaryReport) {
     doc.setTextColor(244, 244, 245)
     doc.setFontSize(20)
     doc.setFont('helvetica', 'bold')
-    doc.text('Breathe Map — Air Quality Report', 14, 18)
+    doc.text('Breathe Map Air Quality Report', 14, 18)
 
     // Subtitle meta
     doc.setFontSize(9)
     doc.setTextColor(113, 113, 122)
     doc.setFont('helvetica', 'normal')
     doc.text(`City: ${report.city.name}`, 14, 26)
-    doc.text(`Date Range: ${report.filters.date_from || 'All time'} → ${report.filters.date_to || 'All time'}`, 14, 31)
-    doc.text(`Generated: ${new Date(report.generated_at).toLocaleString()}`, 14, 36)
-    doc.text(`Total Zones: ${report.overview.zone_count}`, 14, 41)
+    doc.text(`Generated: ${new Date(report.generated_at).toLocaleString()}`, 14, 31)
+    doc.text(`Total Zones: ${report.overview.zone_count}`, 14, 36)
 
     // Divider
     doc.setDrawColor(52, 211, 153)
     doc.setLineWidth(0.5)
-    doc.line(14, 45, 283, 45)
+    doc.line(14, 40, 283, 40)
 
     // AQI summary row
     doc.setFontSize(8)
-    doc.setTextColor(52, 211, 153); doc.text(`✓ Good: ${report.distribution.good}`, 14, 52)
-    doc.setTextColor(251, 191, 36); doc.text(`◐ Moderate: ${report.distribution.moderate}`, 60, 52)
-    doc.setTextColor(249, 115, 22); doc.text(`↑ Poor: ${report.distribution.poor}`, 110, 52)
-    doc.setTextColor(239, 68, 68); doc.text(`⚠ Severe: ${report.distribution.severe}`, 155, 52)
-    doc.setTextColor(113, 113, 122); doc.text(`Avg AQI: ${report.overview.average_aqi}`, 208, 52)
+    doc.setTextColor(52, 211, 153); doc.text(`Good: ${report.distribution.good}`, 14, 47)
+    doc.setTextColor(251, 191, 36); doc.text(`Moderate: ${report.distribution.moderate}`, 56, 47)
+    doc.setTextColor(249, 115, 22); doc.text(`Poor: ${report.distribution.poor}`, 104, 47)
+    doc.setTextColor(239, 68, 68); doc.text(`Severe: ${report.distribution.severe}`, 143, 47)
+    doc.setTextColor(113, 113, 122); doc.text(`Avg AQI: ${report.overview.average_aqi}`, 185, 47)
 
     // Table
     const tableData = report.zones.map((zone) => [
@@ -105,11 +262,11 @@ async function exportPDF(report: SummaryReport) {
         `${zone.population_density}%`,
         `${zone.road_length} km`,
         zone.estimated_aqi ?? '—',
-        zone.category ?? '—',
+        titleCase(zone.category),
     ])
 
     autoTable(doc, {
-        startY: 58,
+        startY: 52,
         head: [['Zone Name', 'Land Use', 'Traffic', 'Population', 'Road Length', 'Est. AQI', 'Category']],
         body: tableData,
         styles: {
@@ -134,7 +291,74 @@ async function exportPDF(report: SummaryReport) {
         },
     })
 
-    // Footer
+    const chartCards = [
+        {
+            title: `${report.city.name} City Overview`,
+            subtitle: `Avg AQI ${report.overview.average_aqi} | Zones ${report.overview.zone_count}`,
+            slices: getCityPieSlices(report),
+        },
+        ...report.zones.map((zone) => ({
+            title: zone.name,
+            subtitle: `AQI ${zone.estimated_aqi ?? 'N/A'} | ${titleCase(zone.category)}`,
+            slices: getZonePieSlices(zone),
+        })),
+    ]
+
+    let chartY = ((doc as any).lastAutoTable?.finalY ?? 120) + 8
+    if (chartY > 135) {
+        doc.addPage()
+        doc.setFillColor(18, 18, 20)
+        doc.rect(0, 0, 297, 297, 'F')
+        chartY = 18
+    }
+
+    doc.setFontSize(11)
+    doc.setTextColor(244, 244, 245)
+    doc.text('AQI Factor Bar Charts', 14, chartY)
+    doc.setFontSize(8)
+    doc.setTextColor(113, 113, 122)
+    doc.text('Traffic, population, road, and land use contribution breakdowns as bar graphs.', 14, chartY + 5)
+    chartY += 10
+
+    const marginX = 14
+    const gapX = 6
+    const gapY = 6
+    const cardW = 85
+    const cardH = 52
+    const cardsPerRow = 3
+    const rowsPerPage = 2
+    const cardsPerPage = cardsPerRow * rowsPerPage
+
+    chartCards.forEach((card, index) => {
+        const pageCardIndex = index % cardsPerPage
+        const pageIndex = Math.floor(index / cardsPerPage)
+
+        if (pageIndex > 0 && pageCardIndex === 0) {
+            doc.addPage()
+            doc.setFillColor(18, 18, 20)
+            doc.rect(0, 0, 297, 297, 'F')
+            chartY = 18
+
+            doc.setFontSize(11)
+            doc.setTextColor(244, 244, 245)
+            doc.text('AQI Factor Bar Charts', 14, chartY)
+            doc.setFontSize(8)
+            doc.setTextColor(113, 113, 122)
+            doc.text('Traffic, population, road, and land use contribution breakdowns as bar graphs.', 14, chartY + 5)
+            chartY += 10
+        }
+
+        const col = pageCardIndex % cardsPerRow
+        const row = Math.floor(pageCardIndex / cardsPerRow)
+        const x = marginX + col * (cardW + gapX)
+        const y = chartY + row * (cardH + gapY)
+
+        const image = renderBarCard(card.title, card.subtitle, card.slices)
+        if (image) {
+            doc.addImage(image, 'PNG', x, y, cardW, cardH)
+        }
+    })
+
     const pageCount = (doc as any).internal.getNumberOfPages()
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i)
@@ -142,22 +366,6 @@ async function exportPDF(report: SummaryReport) {
         doc.setTextColor(82, 82, 91)
         doc.text('Educational simulation only. Not for regulatory use.', 14, 205)
         doc.text(`Page ${i} / ${pageCount}`, 270, 205)
-    }
-
-    const finalY = (doc as any).lastAutoTable?.finalY ?? 165
-    doc.setFontSize(9)
-    doc.setTextColor(161, 161, 170)
-    doc.text(
-        `Simulation summary: runs=${report.simulation_summary.total_runs}, avg delta=${report.simulation_summary.average_delta}, best delta=${report.simulation_summary.best_delta}`,
-        14,
-        Math.min(finalY + 10, 190)
-    )
-    if (report.simulation_summary.latest_scenario_name) {
-        doc.text(
-            `Latest scenario: ${report.simulation_summary.latest_scenario_name}`,
-            14,
-            Math.min(finalY + 16, 196)
-        )
     }
 
     doc.save(`breathe-map-report-${report.city.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`)

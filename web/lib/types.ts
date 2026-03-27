@@ -44,6 +44,12 @@ export interface ReportZoneRow {
   created_at: string
   estimated_aqi: number | null
   category: AQICategory | null
+  feature_contributions?: {
+    traffic: number
+    population: number
+    road_network: number
+    land_use: number
+  } | null
 }
 
 export interface ReportSimulationSummary {
