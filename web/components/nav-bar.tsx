@@ -5,18 +5,20 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { useCity } from '@/context/CityContext'
+import { AddCityModal } from '@/components/AddCityModal'
+import { ExportModal } from '@/components/ExportModal'
 
 // ─── FONT CONFIG ────────────────────────────────────────────────────────────
-const FONT_IMPORT  = 'Google+Sans:wght@400;500;600;700'
+const FONT_IMPORT = 'Google+Sans:wght@400;500;600;700'
 const FONT_DISPLAY = "'Google Sans', sans-serif"
-const FONT_BODY    = "'Google Sans', sans-serif"
+const FONT_BODY = "'Google Sans', sans-serif"
 // ────────────────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { href: '/',           label: 'Home'       },
-  { href: '/dashboard',  label: 'Dashboard'  },
-  { href: '/zones',      label: 'Zones'      },
-  { href: '/analysis',   label: 'Analysis'   },
+  { href: '/', label: 'Home' },
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/zones', label: 'Zones' },
+  { href: '/analysis', label: 'Analysis' },
   { href: '/simulation', label: 'Simulation' },
 ]
 
@@ -63,9 +65,11 @@ function BrandMark() {
 
 export function NavBar() {
   const pathname = usePathname()
-  const [scrolled, setScrolled]               = useState(false)
-  const [drawerOpen, setDrawerOpen]           = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false)
+  const [addCityOpen, setAddCityOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
   const { currentCity, cities, setCurrentCity } = useCity()
 
   useEffect(() => {
@@ -83,6 +87,8 @@ export function NavBar() {
 
   return (
     <>
+      <AddCityModal open={addCityOpen} onClose={() => setAddCityOpen(false)} />
+      <ExportModal open={exportOpen} onClose={() => setExportOpen(false)} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=${FONT_IMPORT}&display=swap');
         :root { --font-display: ${FONT_DISPLAY}; --font-body: ${FONT_BODY}; }
@@ -151,14 +157,13 @@ export function NavBar() {
                 )
               })}
 
-              {/* City selector — muted, not a CTA pill */}
-              <div className="relative z-50 ml-4 pl-4 border-l border-zinc-800/60">
+              {/* City selector + Add City + Export */}
+              <div className="relative z-50 ml-4 pl-4 border-l border-zinc-800/60 flex items-center gap-1">
                 <button
                   onClick={() => setCityDropdownOpen((v) => !v)}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors duration-150"
                   style={{
                     fontFamily: FONT_DISPLAY,
-                    // Muted — looks like a nav item, not a button
                     color: '#6ee7b7',
                     background: 'transparent',
                   }}
@@ -177,6 +182,30 @@ export function NavBar() {
                     }}
                   >
                     <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {/* Add City */}
+                <button
+                  onClick={() => { setCityDropdownOpen(false); setAddCityOpen(true) }}
+                  title="Add new city"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-600 hover:text-emerald-400 hover:bg-zinc-800/50 transition-colors"
+                >
+                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                  </svg>
+                </button>
+
+                {/* Export */}
+                <button
+                  onClick={() => setExportOpen(true)}
+                  title="Export report"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-600 hover:text-emerald-400 hover:bg-zinc-800/50 transition-colors"
+                >
+                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeLinecap="round" />
+                    <polyline points="7 10 12 15 17 10" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="12" y1="15" x2="12" y2="3" strokeLinecap="round" />
                   </svg>
                 </button>
 
@@ -332,6 +361,39 @@ export function NavBar() {
                     )
                   })}
                 </div>
+
+                {/* Add City in drawer */}
+                <button
+                  onClick={() => { setDrawerOpen(false); setAddCityOpen(true) }}
+                  className="flex items-center gap-2 mt-3 px-3 text-[13px] text-emerald-500 hover:text-emerald-400 font-semibold transition-colors"
+                  style={{ fontFamily: FONT_DISPLAY }}
+                >
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                  </svg>
+                  Add City
+                </button>
+              </div>
+
+              <div className="h-px bg-zinc-800/50 my-6" />
+
+              {/* Export in drawer */}
+              <div>
+                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.15em] px-3 mb-3" style={{ fontFamily: FONT_DISPLAY }}>
+                  Reports
+                </p>
+                <button
+                  onClick={() => { setDrawerOpen(false); setExportOpen(true) }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[14px] font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800/40 transition-colors"
+                  style={{ fontFamily: FONT_DISPLAY }}
+                >
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeLinecap="round" />
+                    <polyline points="7 10 12 15 17 10" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="12" y1="15" x2="12" y2="3" strokeLinecap="round" />
+                  </svg>
+                  Export Report
+                </button>
               </div>
             </div>
 
