@@ -208,6 +208,7 @@ export default function Home() {
   useEffect(() => setMounted(true), [])
 
   return (
+    <>
     <div className="min-h-screen bg-zinc-950 flex flex-col">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=${FONT_IMPORT}&display=swap');
@@ -482,8 +483,10 @@ export default function Home() {
       </main>
 
       <FooterDisclaimer />
-      <Analytics />
-      <SpeedInsights />
     </div>
+    <Analytics />
+      <SpeedInsights />
+    </>
+          
   )
 }
