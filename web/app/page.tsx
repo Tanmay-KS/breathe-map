@@ -283,18 +283,7 @@ export default function Home() {
           <div className="relative w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 sm:pt-28 sm:pb-32 md:pt-36 md:pb-44 text-center">
 
             {/* Badge — uses same muted green as nav city chip for coherence */}
-            <div
-              style={{ animation: mounted ? 'heroFade 0.6s ease 0.1s both' : 'none', 
-              borderColor: 'rgba(52,211,153,0.18)',
-              backgroundColor: 'rgba(52,211,153,0.06)',
-              color: '#6ee7b7',
-
-              }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[10px] sm:text-xs font-semibold tracking-widest uppercase mb-7 sm:mb-8 backdrop-blur-sm"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Educational Simulation Platform
-            </div>
+           
 
             {/* Title */}
             <h1
