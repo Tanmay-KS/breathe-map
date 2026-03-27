@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useCity } from '@/context/CityContext'
 import { Zone, AQIEstimate } from '@/lib/types'
+import { Loader } from '@/components/loader'
 import toast from 'react-hot-toast'
 
 // ─── FONT CONFIG ─────────────────────────────────────────────────────────────
@@ -185,8 +186,8 @@ function ProgressOverlay({ format }: { format: ExportFormat }) {
     return (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl"
             style={{ background: 'rgba(18,18,20,0.92)', backdropFilter: 'blur(6px)' }}>
-            <div className="w-12 h-12 rounded-full border-2 border-emerald-500/20 border-t-emerald-500 animate-spin mb-4" />
-            <p className="text-sm font-semibold text-zinc-200" style={{ fontFamily: FONT_DISPLAY }}>
+            <Loader variant="inline" label={`Generating ${format.toUpperCase()}…`} />
+            <p className="text-sm font-semibold text-zinc-200 mt-3" style={{ fontFamily: FONT_DISPLAY }}>
                 Generating {format.toUpperCase()}…
             </p>
             <p className="text-xs text-zinc-500 mt-1" style={{ fontFamily: FONT_BODY }}>
@@ -438,7 +439,7 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
 
                         {isLoadingZones ? (
                             <div className="flex items-center gap-3 py-4 text-sm text-zinc-500" style={{ fontFamily: FONT_BODY }}>
-                                <div className="w-4 h-4 rounded-full border-2 border-zinc-600 border-t-emerald-500 animate-spin" />
+                                <Loader variant="inline" />
                                 Loading zones…
                             </div>
                         ) : zones.length === 0 ? (
@@ -483,18 +484,11 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
                     >
                         {isExporting ? (
                             <>
-                                <div className="w-3.5 h-3.5 rounded-full border-2 border-zinc-900/30 border-t-zinc-900 animate-spin" />
+                                <Loader variant="inline" />
                                 Exporting…
                             </>
                         ) : (
-                            <>
-                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeLinecap="round" />
-                                    <polyline points="7 10 12 15 17 10" strokeLinecap="round" strokeLinejoin="round" />
-                                    <line x1="12" y1="15" x2="12" y2="3" strokeLinecap="round" />
-                                </svg>
-                                Export {format.toUpperCase()}
-                            </>
+                            `Export ${format.toUpperCase()}`
                         )}
                     </button>
                 </div>
