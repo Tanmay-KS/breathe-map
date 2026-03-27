@@ -484,8 +484,6 @@ export default function Home() {
 
       <FooterDisclaimer />
     </div>
-    <Analytics />
-      <SpeedInsights />
     </>
           
   )
