@@ -21,13 +21,17 @@ function getAQIStyles(aqi: number): {
     bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.25)',
     text: '#fbbf24', dot: '#fbbf24', glow: 'rgba(251,191,36,0.12)',
   }
-  if (aqi <= 150) return {
+  if (aqi <= 200) return {
     bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)',
     text: '#f97316', dot: '#f97316', glow: 'rgba(249,115,22,0.12)',
   }
+  if (aqi <= 300) return {
+    bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)',
+    text: '#ef4444', dot: '#ef4444', glow: 'rgba(239,68,68,0.12)',
+  }
   return {
-    bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.25)',
-    text: '#f87171', dot: '#f87171', glow: 'rgba(248,113,113,0.12)',
+    bg: 'rgba(168,85,247,0.1)', border: 'rgba(168,85,247,0.25)',
+    text: '#a855f7', dot: '#a855f7', glow: 'rgba(168,85,247,0.12)',
   }
 }
 

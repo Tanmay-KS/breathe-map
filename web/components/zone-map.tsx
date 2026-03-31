@@ -17,8 +17,7 @@ export function aqiColor(aqi: number): string {
   if (aqi <= 100) return '#fbbf24'  // Satisfactory — amber
   if (aqi <= 200) return '#f97316'  // Moderate     — orange
   if (aqi <= 300) return '#ef4444'  // Poor         — red
-  if (aqi <= 400) return '#a855f7'  // Very Poor    — purple
-  return '#7f1d1d'                   // Severe       — dark red
+  return '#a855f7'                   // Severe       — purple
 }
 
 export function aqiLabel(aqi: number): string {
@@ -26,7 +25,6 @@ export function aqiLabel(aqi: number): string {
   if (aqi <= 100) return 'Satisfactory'
   if (aqi <= 200) return 'Moderate'
   if (aqi <= 300) return 'Poor'
-  if (aqi <= 400) return 'Very Poor'
   return 'Severe'
 }
 
@@ -172,11 +170,10 @@ function buildPopupHTML(zone: any, estimatedAQI: number, color: string, label: s
 function buildLegendHTML(): string {
   const entries = [
     { range: '0 – 50',    label: 'Good',         color: '#34d399' },
-    { range: '51 – 100',  label: 'Satisfactory',  color: '#fbbf24' },
+    { range: '51 – 100',  label: 'Satisfactory', color: '#fbbf24' },
     { range: '101 – 200', label: 'Moderate',      color: '#f97316' },
-    { range: '201 – 300', label: 'Poor',           color: '#ef4444' },
-    { range: '301 – 400', label: 'Very Poor',      color: '#a855f7' },
-    { range: '400+',      label: 'Severe',         color: '#7f1d1d' },
+    { range: '201 – 300', label: 'Poor',          color: '#ef4444' },
+    { range: '301 – 400', label: 'Severe',        color: '#a855f7' },
   ]
 
   return `

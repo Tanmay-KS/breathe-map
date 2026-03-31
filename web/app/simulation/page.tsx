@@ -227,13 +227,10 @@ function SectionHeading({ title }: { title: string }) {
   )
 }
 
-// ── Step badge ────────────────────────────────────────────────────────────────
-function StepBadge({ n, label }: { n: number; label: string }) {
+// ── Section label ────────────────────────────────────────────────────────────
+function SectionLabel({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2.5 mb-4 sm:mb-5">
-      <div className="w-6 h-6 rounded-full bg-emerald-950/80 border border-emerald-700/50 flex items-center justify-center text-[11px] font-bold text-emerald-400 flex-shrink-0">
-        {n}
-      </div>
       <span
         className="text-sm font-semibold text-zinc-200"
         style={{ fontFamily: FONT_DISPLAY }}
@@ -245,7 +242,11 @@ function StepBadge({ n, label }: { n: number; label: string }) {
 }
 
 const aqiColor = (v: number) =>
-  v <= 50 ? '#34d399' : v <= 100 ? '#fbbf24' : v <= 150 ? '#f97316' : '#f87171'
+  v <= 50 ? '#34d399'  // Good
+    : v <= 100 ? '#fbbf24' // Satisfactory
+    : v <= 200 ? '#f97316' // Moderate
+    : v <= 300 ? '#ef4444' // Poor
+    : '#a855f7'            // Severe (301+)
 
 const safeNum = (value: unknown, fallback = 0) => {
   const n = typeof value === 'number' ? value : Number(value)
@@ -467,7 +468,7 @@ export default function SimulationPage() {
             style={{ animation: mounted ? 'fadeSlideUp 0.5s ease 80ms both' : 'none' }}
           >
             <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/60 p-5 sm:p-6 lg:sticky lg:top-6">
-              <StepBadge n={1} label="Configure Parameters" />
+              <SectionLabel label="Configure Parameters" />
               <div className="h-px bg-zinc-800/60 mb-5" />
 
               {/* Zone selector */}
@@ -590,7 +591,7 @@ export default function SimulationPage() {
                   const deltaPct = safeNum(result.delta_percentage, 0)
                   return (
                     <>
-                      <StepBadge n={2} label="Review Results" />
+                      <SectionLabel label="Review Results" />
 
                       {/* Before / Delta / After — responsive grid */}
                       <div className="grid grid-cols-3 gap-2.5 sm:gap-4">

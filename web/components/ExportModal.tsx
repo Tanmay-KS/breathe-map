@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useCity } from '@/context/CityContext'
-import { Zone, AQIEstimate } from '@/lib/types'
+import { Zone, AQIEstimate, SummaryReport } from '@/lib/types'
 import { Loader } from '@/components/loader'
 import toast from 'react-hot-toast'
 
@@ -18,30 +18,189 @@ interface ExportModalProps {
 
 type ExportFormat = 'csv' | 'pdf'
 
+type PieSlice = {
+    label: string
+    value: number
+    color: string
+}
+
+type PieLabel = 'Traffic' | 'Population' | 'Road' | 'Land Use'
+
+const PIE_COLORS: Record<PieLabel, string> = {
+    Traffic: '#34d399',
+    Population: '#60a5fa',
+    Road: '#fbbf24',
+    'Land Use': '#f97316',
+}
+
+function titleCase(value: string | null | undefined) {
+    if (!value) return 'N/A'
+    return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+function getLandUseWeight(landUse: Zone['land_use_type']) {
+    switch (landUse) {
+        case 'green_space':
+            return 10
+        case 'residential':
+            return 28
+        case 'commercial':
+            return 45
+        case 'mixed':
+            return 55
+        case 'industrial':
+            return 70
+        default:
+            return 30
+    }
+}
+
+function getZonePieSlices(zone: SummaryReport['zones'][number]): PieSlice[] {
+    const fallbackSlices: PieSlice[] = [
+        { label: 'Traffic', value: Math.max(0, zone.traffic_density), color: PIE_COLORS.Traffic },
+        { label: 'Population', value: Math.max(0, zone.population_density), color: PIE_COLORS.Population },
+        { label: 'Road', value: Math.max(0, zone.road_length * 5), color: PIE_COLORS.Road },
+        { label: 'Land Use', value: getLandUseWeight(zone.land_use_type), color: PIE_COLORS['Land Use'] },
+    ]
+
+    const contributions = zone.feature_contributions
+    if (!contributions) return fallbackSlices
+
+    const fromModel: PieSlice[] = [
+        { label: 'Traffic', value: Math.abs(Number(contributions.traffic ?? 0)), color: PIE_COLORS.Traffic },
+        { label: 'Population', value: Math.abs(Number(contributions.population ?? 0)), color: PIE_COLORS.Population },
+        { label: 'Road', value: Math.abs(Number(contributions.road_network ?? 0)), color: PIE_COLORS.Road },
+        { label: 'Land Use', value: Math.abs(Number(contributions.land_use ?? 0)), color: PIE_COLORS['Land Use'] },
+    ]
+
+    const total = fromModel.reduce((sum, slice) => sum + slice.value, 0)
+    return total > 0 ? fromModel : fallbackSlices
+}
+
+function getCityPieSlices(report: SummaryReport): PieSlice[] {
+    if (report.zones.length === 0) {
+        return [
+            { label: 'Traffic', value: 1, color: PIE_COLORS.Traffic },
+            { label: 'Population', value: 1, color: PIE_COLORS.Population },
+            { label: 'Road', value: 1, color: PIE_COLORS.Road },
+            { label: 'Land Use', value: 1, color: PIE_COLORS['Land Use'] },
+        ]
+    }
+
+    const totals = report.zones.reduce<Record<PieLabel, number>>(
+        (acc, zone) => {
+            const slices = getZonePieSlices(zone)
+            for (const slice of slices) {
+                acc[slice.label as PieLabel] += slice.value
+            }
+            return acc
+        },
+        { Traffic: 0, Population: 0, Road: 0, 'Land Use': 0 }
+    )
+
+    return [
+        { label: 'Traffic', value: totals.Traffic, color: PIE_COLORS.Traffic },
+        { label: 'Population', value: totals.Population, color: PIE_COLORS.Population },
+        { label: 'Road', value: totals.Road, color: PIE_COLORS.Road },
+        { label: 'Land Use', value: totals['Land Use'], color: PIE_COLORS['Land Use'] },
+    ]
+}
+
+function renderBarCard(title: string, subtitle: string, slices: PieSlice[]) {
+    const canvas = document.createElement('canvas')
+    canvas.width = 540
+    canvas.height = 320
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return ''
+
+    ctx.fillStyle = '#18181b'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'
+    ctx.lineWidth = 2
+    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2)
+
+    ctx.fillStyle = '#f4f4f5'
+    ctx.font = 'bold 28px Helvetica'
+    ctx.fillText(title, 24, 38)
+
+    ctx.fillStyle = '#a1a1aa'
+    ctx.font = '18px Helvetica'
+    ctx.fillText(subtitle, 24, 68)
+
+    const maxValue = Math.max(...slices.map((slice) => slice.value), 1)
+    const barX = 32
+    const barY = 110
+    const barTrackWidth = 280
+    const barHeight = 18
+    const rowGap = 42
+
+    ctx.fillStyle = '#71717a'
+    ctx.font = '16px Helvetica'
+
+    let legendY = barY
+    for (const slice of slices) {
+        const barWidth = Math.max(8, (slice.value / maxValue) * barTrackWidth)
+
+        ctx.fillStyle = '#e4e4e7'
+        ctx.font = '18px Helvetica'
+        ctx.fillText(slice.label, barX, legendY - 10)
+
+        ctx.fillStyle = '#27272a'
+        ctx.fillRect(barX, legendY, barTrackWidth, barHeight)
+
+        ctx.fillStyle = slice.color
+        ctx.fillRect(barX, legendY, barWidth, barHeight)
+
+        ctx.fillStyle = '#a1a1aa'
+        ctx.font = '16px Helvetica'
+        ctx.fillText(`${slice.value.toFixed(1)}`, 330, legendY + 14)
+        legendY += rowGap
+    }
+
+    ctx.fillStyle = '#71717a'
+    ctx.font = '15px Helvetica'
+    ctx.fillText('Higher bars indicate stronger modeled contribution to AQI.', 24, 292)
+
+    ctx.fillStyle = '#52525b'
+    ctx.font = '13px Helvetica'
+    const ticks = 4
+    for (let i = 0; i <= ticks; i++) {
+        const ratio = i / ticks
+        const x = barX + ratio * barTrackWidth
+        ctx.fillRect(x, barY - 2, 1, rowGap * slices.length - 18)
+        ctx.fillText(`${Math.round(maxValue * ratio)}`, x - 6, 102)
+    }
+
+    return canvas.toDataURL('image/png')
+}
+
 // ── CSV Export ────────────────────────────────────────────────────────────────
-function exportCSV(zones: Zone[], estimates: Map<string, AQIEstimate>, cityName: string, dateFrom: string, dateTo: string) {
+function exportCSV(report: SummaryReport) {
     const headers = ['Zone Name', 'Land Use Type', 'Traffic Density (%)', 'Population Density (%)', 'Road Length (km)', 'Estimated AQI', 'AQI Category', 'Notes', 'Created At']
 
-    const rows = zones.map((z) => {
-        const est = estimates.get(z.id)
-        return [
-            z.name,
-            z.land_use_type.replace('_', ' '),
-            z.traffic_density,
-            z.population_density,
-            z.road_length,
-            est?.estimated_aqi ?? 'N/A',
-            est?.category ?? 'N/A',
-            z.notes || '',
-            z.created_at,
-        ]
-    })
+    const rows = report.zones.map((zone) => [
+        zone.name,
+        zone.land_use_type.replace('_', ' '),
+        zone.traffic_density,
+        zone.population_density,
+        zone.road_length,
+        zone.estimated_aqi ?? 'N/A',
+        titleCase(zone.category),
+        zone.notes || '',
+        zone.created_at,
+    ])
 
     const csvContent = [
         `# Breathe Map - Air Quality Report`,
-        `# City: ${cityName}`,
-        `# Date Range: ${dateFrom || 'All'} to ${dateTo || 'All'}`,
-        `# Generated: ${new Date().toISOString()}`,
+        `# City: ${report.city.name}`,
+        `# Date Range: ${report.filters.date_from || 'All'} to ${report.filters.date_to || 'All'}`,
+        `# Generated: ${report.generated_at}`,
+        `# Zone Count: ${report.overview.zone_count}`,
+        `# Average AQI: ${report.overview.average_aqi}`,
+        `# AQI Distribution: Good=${report.distribution.good}, Moderate=${report.distribution.moderate}, Poor=${report.distribution.poor}, Severe=${report.distribution.severe}`,
+        `# Simulation Runs: ${report.simulation_summary.total_runs}`,
         '',
         headers.join(','),
         ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')),
@@ -51,7 +210,7 @@ function exportCSV(zones: Zone[], estimates: Map<string, AQIEstimate>, cityName:
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `breathe-map-report-${cityName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`
+    link.download = `breathe-map-report-${report.city.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -59,7 +218,7 @@ function exportCSV(zones: Zone[], estimates: Map<string, AQIEstimate>, cityName:
 }
 
 // ── PDF Export ────────────────────────────────────────────────────────────────
-async function exportPDF(zones: Zone[], estimates: Map<string, AQIEstimate>, cityName: string, dateFrom: string, dateTo: string) {
+async function exportPDF(report: SummaryReport) {
     const { jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
 
@@ -73,50 +232,42 @@ async function exportPDF(zones: Zone[], estimates: Map<string, AQIEstimate>, cit
     doc.setTextColor(244, 244, 245)
     doc.setFontSize(20)
     doc.setFont('helvetica', 'bold')
-    doc.text('Breathe Map — Air Quality Report', 14, 18)
+    doc.text('Breathe Map Air Quality Report', 14, 18)
 
     // Subtitle meta
     doc.setFontSize(9)
     doc.setTextColor(113, 113, 122)
     doc.setFont('helvetica', 'normal')
-    doc.text(`City: ${cityName}`, 14, 26)
-    doc.text(`Date Range: ${dateFrom || 'All time'} → ${dateTo || 'All time'}`, 14, 31)
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 36)
-    doc.text(`Total Zones: ${zones.length}`, 14, 41)
+    doc.text(`City: ${report.city.name}`, 14, 26)
+    doc.text(`Generated: ${new Date(report.generated_at).toLocaleString()}`, 14, 31)
+    doc.text(`Total Zones: ${report.overview.zone_count}`, 14, 36)
 
     // Divider
     doc.setDrawColor(52, 211, 153)
     doc.setLineWidth(0.5)
-    doc.line(14, 45, 283, 45)
+    doc.line(14, 40, 283, 40)
 
     // AQI summary row
-    const good = Array.from(estimates.values()).filter((e) => e.estimated_aqi <= 50).length
-    const moderate = Array.from(estimates.values()).filter((e) => e.estimated_aqi > 50 && e.estimated_aqi <= 100).length
-    const poor = Array.from(estimates.values()).filter((e) => e.estimated_aqi > 100 && e.estimated_aqi <= 200).length
-    const severe = Array.from(estimates.values()).filter((e) => e.estimated_aqi > 200).length
-
     doc.setFontSize(8)
-    doc.setTextColor(52, 211, 153); doc.text(`✓ Good: ${good}`, 14, 52)
-    doc.setTextColor(251, 191, 36); doc.text(`◐ Moderate: ${moderate}`, 60, 52)
-    doc.setTextColor(249, 115, 22); doc.text(`↑ Poor: ${poor}`, 110, 52)
-    doc.setTextColor(239, 68, 68); doc.text(`⚠ Severe: ${severe}`, 155, 52)
+    doc.setTextColor(52, 211, 153); doc.text(`Good: ${report.distribution.good}`, 14, 47)
+    doc.setTextColor(251, 191, 36); doc.text(`Moderate: ${report.distribution.moderate}`, 56, 47)
+    doc.setTextColor(249, 115, 22); doc.text(`Poor: ${report.distribution.poor}`, 104, 47)
+    doc.setTextColor(239, 68, 68); doc.text(`Severe: ${report.distribution.severe}`, 143, 47)
+    doc.setTextColor(113, 113, 122); doc.text(`Avg AQI: ${report.overview.average_aqi}`, 185, 47)
 
     // Table
-    const tableData = zones.map((z) => {
-        const est = estimates.get(z.id)
-        return [
-            z.name,
-            z.land_use_type.replace('_', ' '),
-            `${z.traffic_density}%`,
-            `${z.population_density}%`,
-            `${z.road_length} km`,
-            est?.estimated_aqi ?? '—',
-            est?.category ?? '—',
-        ]
-    })
+    const tableData = report.zones.map((zone) => [
+        zone.name,
+        zone.land_use_type.replace('_', ' '),
+        `${zone.traffic_density}%`,
+        `${zone.population_density}%`,
+        `${zone.road_length} km`,
+        zone.estimated_aqi ?? '—',
+        titleCase(zone.category),
+    ])
 
     autoTable(doc, {
-        startY: 58,
+        startY: 52,
         head: [['Zone Name', 'Land Use', 'Traffic', 'Population', 'Road Length', 'Est. AQI', 'Category']],
         body: tableData,
         styles: {
@@ -141,7 +292,74 @@ async function exportPDF(zones: Zone[], estimates: Map<string, AQIEstimate>, cit
         },
     })
 
-    // Footer
+    const chartCards = [
+        {
+            title: `${report.city.name} City Overview`,
+            subtitle: `Avg AQI ${report.overview.average_aqi} | Zones ${report.overview.zone_count}`,
+            slices: getCityPieSlices(report),
+        },
+        ...report.zones.map((zone) => ({
+            title: zone.name,
+            subtitle: `AQI ${zone.estimated_aqi ?? 'N/A'} | ${titleCase(zone.category)}`,
+            slices: getZonePieSlices(zone),
+        })),
+    ]
+
+    let chartY = ((doc as any).lastAutoTable?.finalY ?? 120) + 8
+    if (chartY > 135) {
+        doc.addPage()
+        doc.setFillColor(18, 18, 20)
+        doc.rect(0, 0, 297, 297, 'F')
+        chartY = 18
+    }
+
+    doc.setFontSize(11)
+    doc.setTextColor(244, 244, 245)
+    doc.text('AQI Factor Bar Charts', 14, chartY)
+    doc.setFontSize(8)
+    doc.setTextColor(113, 113, 122)
+    doc.text('Traffic, population, road, and land use contribution breakdowns as bar graphs.', 14, chartY + 5)
+    chartY += 10
+
+    const marginX = 14
+    const gapX = 6
+    const gapY = 6
+    const cardW = 85
+    const cardH = 52
+    const cardsPerRow = 3
+    const rowsPerPage = 2
+    const cardsPerPage = cardsPerRow * rowsPerPage
+
+    chartCards.forEach((card, index) => {
+        const pageCardIndex = index % cardsPerPage
+        const pageIndex = Math.floor(index / cardsPerPage)
+
+        if (pageIndex > 0 && pageCardIndex === 0) {
+            doc.addPage()
+            doc.setFillColor(18, 18, 20)
+            doc.rect(0, 0, 297, 297, 'F')
+            chartY = 18
+
+            doc.setFontSize(11)
+            doc.setTextColor(244, 244, 245)
+            doc.text('AQI Factor Bar Charts', 14, chartY)
+            doc.setFontSize(8)
+            doc.setTextColor(113, 113, 122)
+            doc.text('Traffic, population, road, and land use contribution breakdowns as bar graphs.', 14, chartY + 5)
+            chartY += 10
+        }
+
+        const col = pageCardIndex % cardsPerRow
+        const row = Math.floor(pageCardIndex / cardsPerRow)
+        const x = marginX + col * (cardW + gapX)
+        const y = chartY + row * (cardH + gapY)
+
+        const image = renderBarCard(card.title, card.subtitle, card.slices)
+        if (image) {
+            doc.addImage(image, 'PNG', x, y, cardW, cardH)
+        }
+    })
+
     const pageCount = (doc as any).internal.getNumberOfPages()
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i)
@@ -151,7 +369,7 @@ async function exportPDF(zones: Zone[], estimates: Map<string, AQIEstimate>, cit
         doc.text(`Page ${i} / ${pageCount}`, 270, 205)
     }
 
-    doc.save(`breathe-map-report-${cityName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`)
+    doc.save(`breathe-map-report-${report.city.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`)
 }
 
 // ── Checkbox item ────────────────────────────────────────────────────────────
@@ -199,14 +417,12 @@ function ProgressOverlay({ format }: { format: ExportFormat }) {
 
 // ── Main Export Modal ─────────────────────────────────────────────────────────
 export function ExportModal({ open, onClose }: ExportModalProps) {
-    const { cities, currentCityId, setCurrentCity } = useCity()
+    const { cities, currentCityId } = useCity()
 
     const [selectedCityId, setSelectedCityId] = useState(currentCityId)
     const [zones, setZones] = useState<Zone[]>([])
     const [estimates, setEstimates] = useState<Map<string, AQIEstimate>>(new Map())
     const [selectedZoneIds, setSelectedZoneIds] = useState<Set<string>>(new Set())
-    const [dateFrom, setDateFrom] = useState('')
-    const [dateTo, setDateTo] = useState('')
     const [format, setFormat] = useState<ExportFormat>('csv')
     const [isLoadingZones, setIsLoadingZones] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
@@ -232,7 +448,6 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
     useEffect(() => {
         if (open) {
             setSelectedCityId(currentCityId)
-            setDateFrom(''); setDateTo('')
             setFormat('csv'); setIsExporting(false)
         }
     }, [open, currentCityId])
@@ -255,28 +470,32 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
 
     const handleExport = async () => {
         const exportZones = zones.filter((z) => selectedZoneIds.has(z.id))
-        // Apply date filter if set
-        const filtered = exportZones.filter((z) => {
-            const created = new Date(z.created_at)
-            if (dateFrom && created < new Date(dateFrom)) return false
-            if (dateTo && created > new Date(dateTo + 'T23:59:59')) return false
-            return true
-        })
 
-        if (filtered.length === 0) {
-            toast.error('No zones match the selected filters')
+        if (exportZones.length === 0) {
+            toast.error('No zones selected')
             return
         }
 
-        const cityName = cities.find((c) => c.id === selectedCityId)?.name ?? 'Unknown'
         setIsExporting(true)
         try {
+            const params = new URLSearchParams({
+                cityId: selectedCityId,
+                zoneIds: exportZones.map((zone) => zone.id).join(','),
+            })
+
+            const response = await fetch(`/api/reports/summary?${params.toString()}`, { cache: 'no-store' })
+            const report = await response.json()
+
+            if (!response.ok) {
+                throw new Error(report.error || 'Failed to generate report')
+            }
+
             if (format === 'csv') {
-                exportCSV(filtered, estimates, cityName, dateFrom, dateTo)
-                toast.success(`CSV exported — ${filtered.length} zone${filtered.length > 1 ? 's' : ''}`)
+                exportCSV(report as SummaryReport)
+                toast.success(`CSV exported — ${exportZones.length} zone${exportZones.length > 1 ? 's' : ''}`)
             } else {
-                await exportPDF(filtered, estimates, cityName, dateFrom, dateTo)
-                toast.success(`PDF exported — ${filtered.length} zone${filtered.length > 1 ? 's' : ''}`)
+                await exportPDF(report as SummaryReport)
+                toast.success(`PDF exported — ${exportZones.length} zone${exportZones.length > 1 ? 's' : ''}`)
             }
             onClose()
         } catch (err) {
@@ -405,24 +624,7 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
                         </select>
                     </div>
 
-                    {/* Date range */}
-                    <div>
-                        <label className="block text-xs font-bold text-zinc-400 uppercase tracking-[0.12em] mb-2" style={{ fontFamily: FONT_DISPLAY }}>
-                            Date Range <span className="text-zinc-600 normal-case tracking-normal font-medium">(optional)</span>
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <p className="text-[11px] text-zinc-600 mb-1" style={{ fontFamily: FONT_BODY }}>From</p>
-                                <input type="date" className="exp-input" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-                            </div>
-                            <div>
-                                <p className="text-[11px] text-zinc-600 mb-1" style={{ fontFamily: FONT_BODY }}>To</p>
-                                <input type="date" className="exp-input" value={dateTo} onChange={(e) => setDateTo(e.target.value)} min={dateFrom} />
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Zone selection */}
                     <div>
                         <div className="flex items-center justify-between mb-2.5">
                             <label className="text-xs font-bold text-zinc-400 uppercase tracking-[0.12em]" style={{ fontFamily: FONT_DISPLAY }}>
