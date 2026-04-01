@@ -199,7 +199,7 @@ function exportCSV(report: SummaryReport) {
         `# Generated: ${report.generated_at}`,
         `# Zone Count: ${report.overview.zone_count}`,
         `# Average AQI: ${report.overview.average_aqi}`,
-        `# AQI Distribution: Good=${report.distribution.good}, Moderate=${report.distribution.moderate}, Poor=${report.distribution.poor}, Severe=${report.distribution.severe}`,
+        `# AQI Distribution: Good=${report.distribution.good}, Satisfactory=${report.distribution.satisfactory}, Moderate=${report.distribution.moderate}, Poor=${report.distribution.poor}, Severe=${report.distribution.severe}`,
         `# Simulation Runs: ${report.simulation_summary.total_runs}`,
         '',
         headers.join(','),
@@ -247,13 +247,13 @@ async function exportPDF(report: SummaryReport) {
     doc.setLineWidth(0.5)
     doc.line(14, 40, 283, 40)
 
-    // AQI summary row
     doc.setFontSize(8)
     doc.setTextColor(52, 211, 153); doc.text(`Good: ${report.distribution.good}`, 14, 47)
-    doc.setTextColor(251, 191, 36); doc.text(`Moderate: ${report.distribution.moderate}`, 56, 47)
-    doc.setTextColor(249, 115, 22); doc.text(`Poor: ${report.distribution.poor}`, 104, 47)
-    doc.setTextColor(239, 68, 68); doc.text(`Severe: ${report.distribution.severe}`, 143, 47)
-    doc.setTextColor(113, 113, 122); doc.text(`Avg AQI: ${report.overview.average_aqi}`, 185, 47)
+    doc.setTextColor(251, 191, 36); doc.text(`Satisfactory: ${report.distribution.satisfactory}`, 40, 47)
+    doc.setTextColor(249, 115, 22); doc.text(`Moderate: ${report.distribution.moderate}`, 85, 47)
+    doc.setTextColor(239, 68, 68); doc.text(`Poor: ${report.distribution.poor}`, 125, 47)
+    doc.setTextColor(168, 85, 247); doc.text(`Severe: ${report.distribution.severe}`, 160, 47)
+    doc.setTextColor(113, 113, 122); doc.text(`Avg AQI: ${report.overview.average_aqi}`, 195, 47)
 
     // Table
     const tableData = report.zones.map((zone) => [
@@ -606,7 +606,6 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
                                         </svg>
                                     )}
                                     {f.toUpperCase()}
-                                    {format === f && <span className="text-[10px] opacity-70">selected</span>}
                                 </button>
                             ))}
                         </div>
